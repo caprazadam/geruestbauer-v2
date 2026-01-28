@@ -262,6 +262,16 @@ export default function AdminCompaniesPage() {
               <div className="col-span-3">{(selectedCompany as any)?.email || "Nicht angegeben"}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Webseite</Label>
+              <div className="col-span-3">
+                {selectedCompany?.website ? (
+                  <a href={selectedCompany.website.startsWith('http') ? selectedCompany.website : `https://${selectedCompany.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {selectedCompany.website}
+                  </a>
+                ) : "Nicht angegeben"}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right font-bold">Leistungen</Label>
               <div className="col-span-3 flex flex-wrap gap-1">
                 {selectedCompany?.services?.map((s, i) => (
@@ -311,6 +321,14 @@ export default function AdminCompaniesPage() {
                 id="email" 
                 value={(editData as any).email || ""} 
                 onChange={(e) => setEditData({...editData, email: e.target.value} as any)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="website">Webseite</Label>
+              <Input 
+                id="website" 
+                value={editData.website || ""} 
+                onChange={(e) => setEditData({...editData, website: e.target.value})}
               />
             </div>
           </div>
