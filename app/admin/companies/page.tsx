@@ -331,6 +331,45 @@ export default function AdminCompaniesPage() {
                 onChange={(e) => setEditData({...editData, website: e.target.value})}
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="image">Firmenbild / Logo</Label>
+              <div className="flex items-center gap-4">
+                {editData.imageUrl && (
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden border">
+                    <img src={editData.imageUrl} alt="Vorschau" className="object-cover w-full h-full" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Input 
+                    id="image-url" 
+                    placeholder="Bild-URL eingeben..." 
+                    value={editData.imageUrl || ""} 
+                    onChange={(e) => setEditData({...editData, imageUrl: e.target.value})}
+                    className="mb-2"
+                  />
+                  <div className="relative">
+                    <Input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditData({...editData, imageUrl: reader.result as string});
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      Laden Sie eine Datei hoch oder geben Sie eine URL an.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Abbrechen</Button>
