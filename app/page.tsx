@@ -21,28 +21,41 @@ export default function Home() {
         <FeaturedCompanies />
       </section>
 
-      <section className="mb-12 grid md:grid-cols-3 gap-8">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Shield className="mx-auto h-12 w-12 mb-4 text-blue-600" />
-            <h3 className="text-xl font-bold mb-2">Geprüfte Unternehmen</h3>
-            <p>Alle Gerüstbauer sind zertifiziert und erfüllen höchste Sicherheitsstandards.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Award className="mx-auto h-12 w-12 mb-4 text-blue-600" />
-            <h3 className="text-xl font-bold mb-2">Echte Bewertungen</h3>
-            <p>Transparente Kundenbewertungen helfen Ihnen bei der richtigen Entscheidung.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <Clock className="mx-auto h-12 w-12 mb-4 text-blue-600" />
-            <h3 className="text-xl font-bold mb-2">Schnelle Anfragen</h3>
-            <p>Kontaktieren Sie Firmen direkt und erhalten Sie zeitnah ein unverbindliches Angebot.</p>
-          </CardContent>
-        </Card>
+      <section className="mb-16">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="group relative p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+            <div className="relative">
+              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                <Shield className="h-7 w-7 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Geprüfte Unternehmen</h3>
+              <p className="text-slate-600 leading-relaxed">Alle Gerüstbauer sind zertifiziert und erfüllen höchste Sicherheitsstandards für Ihr Projekt.</p>
+            </div>
+          </div>
+
+          <div className="group relative p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+            <div className="relative">
+              <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300">
+                <Award className="h-7 w-7 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Echte Bewertungen</h3>
+              <p className="text-slate-600 leading-relaxed">Transparente Kundenbewertungen von verifizierten Projekten helfen Ihnen bei der richtigen Entscheidung.</p>
+            </div>
+          </div>
+
+          <div className="group relative p-8 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
+            <div className="relative">
+              <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+                <Clock className="h-7 w-7 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold mb-3 text-slate-900">Schnelle Anfragen</h3>
+              <p className="text-slate-600 leading-relaxed">Kontaktieren Sie Firmen direkt und erhalten Sie zeitnah ein unverbindliches Angebot für Ihr Vorhaben.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="text-center mb-12">
