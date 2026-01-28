@@ -44,11 +44,6 @@ export default function Header() {
           <Link href="/contact" className="hover:text-gray-600 transition-colors">
             Kontakt
           </Link>
-          <Link href="/firma-eintragen">
-            <Button className="bg-slate-900 hover:bg-slate-800 text-white">
-              Firma eintragen
-            </Button>
-          </Link>
 
           {!isLoading && (
             <>
@@ -93,7 +88,7 @@ export default function Header() {
                   <Link href="/auth/signin">
                     <Button variant="outline">Anmelden</Button>
                   </Link>
-                  <Link href="/auth/signup">
+                  <Link href="/firma-eintragen">
                     <Button>Registrieren</Button>
                   </Link>
                 </div>
@@ -125,11 +120,6 @@ export default function Header() {
               </Link>
               <Link href="/contact" className="flex items-center gap-2 py-2">
                 Kontakt
-              </Link>
-              <Link href="/firma-eintragen">
-                <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white mt-2">
-                  Firma eintragen
-                </Button>
               </Link>
 
               {!isLoading && (
@@ -168,7 +158,7 @@ export default function Header() {
                           Anmelden
                         </Button>
                       </Link>
-                      <Link href="/auth/signup">
+                      <Link href="/firma-eintragen">
                         <Button className="w-full">Registrieren</Button>
                       </Link>
                     </div>
