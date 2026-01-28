@@ -3,150 +3,313 @@
 import { useState, useEffect } from "react"
 import AdminLayout from "@/components/admin-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
-import { Save, Globe, Shield, Mail, Bell } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { 
+  Save, 
+  Settings as SettingsIcon, 
+  Shield, 
+  Globe, 
+  Mail, 
+  Code, 
+  Lock, 
+  Search,
+  CheckCircle2
+} from "lucide-react"
 
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState({
-    siteName: "Gerüstbauer-Verzeichnis",
-    siteEmail: "info@geruestbauer-verzeichnis.de",
-    itemsPerPage: "12",
-    allowRegistration: true,
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+  
+  // Site Metadata & SEO
+  const [seoSettings, setSeoSettings] = useState({
+    siteTitle: "Gerüstbauer-Verzeichnis",
+    siteDescription: "Finden Sie die besten Gerüstbauer in Ihrer Nähe.",
+    keywords: "Gerüstbau, Gerüstmiete, Deutschland, Scaffolding",
+    googleAnalyticsId: "G-XXXXXXXXXX",
+    customHeadCode: ""
+  })
+
+  // General Settings
+  const [generalSettings, setGeneralSettings] = useState({
     maintenanceMode: false,
+    allowRegistration: true,
+    contactEmail: "admin@geruestbauer-verzeichnis.de"
+  })
+
+  // Password Settings
+  const [passwordSettings, setPasswordSettings] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
   })
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem("admin_settings")
-    if (savedSettings) {
-      try {
-        setSettings(JSON.parse(savedSettings))
-      } catch (e) {
-        console.error("Fehler beim Laden der Einstellungen", e)
-      }
-    }
+    const savedSeo = localStorage.getItem("seoSettings")
+    const savedGeneral = localStorage.getItem("generalSettings")
+    if (savedSeo) setSeoSettings(JSON.parse(savedSeo))
+    if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral))
   }, [])
 
-  const handleSave = () => {
-    localStorage.setItem("admin_settings", JSON.stringify(settings))
-    toast.success("Einstellungen erfolgreich gespeichert")
+  const handleSaveSeo = () => {
+    setLoading(true)
+    setTimeout(() => {
+      localStorage.setItem("seoSettings", JSON.stringify(seoSettings))
+      setLoading(false)
+      toast({
+        title: "SEO-Einstellungen gespeichert",
+        description: "Die Metadaten und der Analytics-Code wurden aktualisiert.",
+      })
+    }, 800)
+  }
+
+  const handleSaveGeneral = () => {
+    setLoading(true)
+    setTimeout(() => {
+      localStorage.setItem("generalSettings", JSON.stringify(generalSettings))
+      setLoading(false)
+      toast({
+        title: "Allgemeine Einstellungen gespeichert",
+        description: "Ihre Änderungen wurden erfolgreich übernommen.",
+      })
+    }, 800)
+  }
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordSettings.newPassword !== passwordSettings.confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Fehler",
+        description: "Die neuen Passwörter stimmen nicht überein.",
+      })
+      return
+    }
+    
+    setLoading(true)
+    setTimeout(() => {
+      const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}")
+      if (adminUser.password === passwordSettings.currentPassword) {
+        adminUser.password = passwordSettings.newPassword
+        localStorage.setItem("adminUser", JSON.stringify(adminUser))
+        setPasswordSettings({ currentPassword: "", newPassword: "", confirmPassword: "" })
+        toast({
+          title: "Passwort geändert",
+          description: "Ihr Admin-Passwort wurde erfolgreich aktualisiert.",
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Fehler",
+          description: "Das aktuelle Passwort ist falsch.",
+        })
+      }
+      setLoading(false)
+    }, 1000)
   }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Einstellungen</h1>
-            <p className="text-slate-600 mt-1">Verwalten Sie Ihre Website-Konfiguration</p>
-          </div>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="h-4 w-4 mr-2" />
-            Speichern
-          </Button>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">System-Einstellungen</h1>
+          <p className="text-slate-500 mt-1 text-lg">Konfigurieren Sie SEO, Analytik und Sicherheit</p>
         </div>
 
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="bg-white border p-1 rounded-xl mb-6">
-            <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+        <Tabs defaultValue="seo" className="space-y-6">
+          <TabsList className="bg-slate-100 p-1 rounded-xl">
+            <TabsTrigger value="seo" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Globe className="h-4 w-4 mr-2" />
+              SEO & Metadata
+            </TabsTrigger>
+            <TabsTrigger value="general" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <SettingsIcon className="h-4 w-4 mr-2" />
               Allgemein
             </TabsTrigger>
-            <TabsTrigger value="security" className="rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+            <TabsTrigger value="security" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Shield className="h-4 w-4 mr-2" />
               Sicherheit
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
-              <Bell className="h-4 w-4 mr-2" />
-              Benachrichtigungen
-            </TabsTrigger>
           </TabsList>
 
+          {/* SEO & Analytics Content */}
+          <TabsContent value="seo">
+            <Card className="border-none shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Search className="h-5 w-5 text-blue-600" />
+                  Suchmaschinen-Optimierung (SEO)
+                </CardTitle>
+                <CardDescription>Verwalten Sie Titel, Keywords und Tracking-Codes</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Website-Titel</Label>
+                    <Input 
+                      value={seoSettings.siteTitle}
+                      onChange={(e) => setSeoSettings({...seoSettings, siteTitle: e.target.value})}
+                      placeholder="z.B. Gerüstbauer-Verzeichnis Deutschland" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Google Analytics ID (GTAG)</Label>
+                    <Input 
+                      value={seoSettings.googleAnalyticsId}
+                      onChange={(e) => setSeoSettings({...seoSettings, googleAnalyticsId: e.target.value})}
+                      placeholder="G-XXXXXXXXXX" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Keywords (kommagetrennt)</Label>
+                  <Input 
+                    value={seoSettings.keywords}
+                    onChange={(e) => setSeoSettings({...seoSettings, keywords: e.target.value})}
+                    placeholder="Gerüstbau, Fassadengerüst, Rollgerüst..." 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Website-Beschreibung (Description Meta-Tag)</Label>
+                  <Textarea 
+                    value={seoSettings.siteDescription}
+                    onChange={(e) => setSeoSettings({...seoSettings, siteDescription: e.target.value})}
+                    placeholder="Beschreiben Sie Ihre Website für Suchergebnisse..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Code className="h-4 w-4 text-slate-400" />
+                    Benutzerdefinierter Head-Code
+                  </Label>
+                  <Textarea 
+                    value={seoSettings.customHeadCode}
+                    onChange={(e) => setSeoSettings({...seoSettings, customHeadCode: e.target.value})}
+                    placeholder="<script>...</script> oder <meta ... />"
+                    rows={4}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button onClick={handleSaveSeo} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    SEO-Daten speichern
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* General Settings Content */}
           <TabsContent value="general">
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle>Allgemeine Einstellungen</CardTitle>
-                <CardDescription>Grundlegende Informationen Ihrer Website.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <SettingsIcon className="h-5 w-5 text-green-600" />
+                  Website-Konfiguration
+                </CardTitle>
+                <CardDescription>Grundlegende Funktionen und Kontaktmöglichkeiten</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="siteName">Name der Website</Label>
-                  <Input
-                    id="siteName"
-                    value={settings.siteName}
-                    onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-                  />
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-bold">Wartungsmodus</Label>
+                      <p className="text-sm text-slate-500">Website für Besucher vorübergehend sperren</p>
+                    </div>
+                    <Switch 
+                      checked={generalSettings.maintenanceMode}
+                      onCheckedChange={(val) => setGeneralSettings({...generalSettings, maintenanceMode: val})}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-bold">Benutzerregistrierung</Label>
+                      <p className="text-sm text-slate-500">Besuchern erlauben, neue Konten zu erstellen</p>
+                    </div>
+                    <Switch 
+                      checked={generalSettings.allowRegistration}
+                      onCheckedChange={(val) => setGeneralSettings({...generalSettings, allowRegistration: val})}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="siteEmail">Kontakt E-Mail</Label>
-                  <Input
-                    id="siteEmail"
-                    type="email"
-                    value={settings.siteEmail}
-                    onChange={(e) => setSettings({ ...settings, siteEmail: e.target.value })}
-                  />
+
+                <div className="space-y-2">
+                  <Label>System-Kontakt-Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input 
+                      className="pl-10"
+                      value={generalSettings.contactEmail}
+                      onChange={(e) => setGeneralSettings({...generalSettings, contactEmail: e.target.value})}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="itemsPerPage">Einträge pro Seite (Suche)</Label>
-                  <Input
-                    id="itemsPerPage"
-                    type="number"
-                    value={settings.itemsPerPage}
-                    onChange={(e) => setSettings({ ...settings, itemsPerPage: e.target.value })}
-                  />
+
+                <div className="flex justify-end pt-4">
+                  <Button onClick={handleSaveGeneral} disabled={loading} className="bg-green-600 hover:bg-green-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    Einstellungen speichern
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Security Content */}
           <TabsContent value="security">
             <Card className="border-none shadow-sm">
               <CardHeader>
-                <CardTitle>Sicherheitseinstellungen</CardTitle>
-                <CardDescription>Zugriffskontrolle und Sicherheitsoptionen.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-red-600" />
+                  Admin-Sicherheit
+                </CardTitle>
+                <CardDescription>Aktualisieren Sie Ihre Zugangsberechtigungen</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border rounded-xl">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-bold">Benutzerregistrierung</Label>
-                    <p className="text-sm text-slate-500 font-medium">Neuen Firmen erlauben, sich selbst zu registrieren.</p>
+              <CardContent>
+                <form onSubmit={handleChangePassword} className="space-y-6 max-w-md">
+                  <div className="space-y-2">
+                    <Label>Aktuelles Passwort</Label>
+                    <Input 
+                      type="password" 
+                      required
+                      value={passwordSettings.currentPassword}
+                      onChange={(e) => setPasswordSettings({...passwordSettings, currentPassword: e.target.value})}
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.allowRegistration}
-                    onChange={(e) => setSettings({ ...settings, allowRegistration: e.target.checked })}
-                    className="h-6 w-6 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                  />
-                </div>
-                <div className="flex items-center justify-between p-4 border rounded-xl bg-red-50/50 border-red-100">
-                  <div className="space-y-0.5">
-                    <Label className="text-base font-bold text-red-900">Wartungsmodus</Label>
-                    <p className="text-sm text-red-600 font-medium">Die Website für alle Besucher außer Administratoren sperren.</p>
+                  <div className="space-y-2">
+                    <Label>Neues Passwort</Label>
+                    <Input 
+                      type="password" 
+                      required
+                      value={passwordSettings.newPassword}
+                      onChange={(e) => setPasswordSettings({...passwordSettings, newPassword: e.target.value})}
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={settings.maintenanceMode}
-                    onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
-                    className="h-6 w-6 rounded border-red-300 text-red-600 focus:ring-red-600"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="notifications">
-            <Card className="border-none shadow-sm">
-              <CardHeader>
-                <CardTitle>E-Mail Benachrichtigungen</CardTitle>
-                <CardDescription>Wann möchten Sie informiert werden?</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-center py-12">
-                <Mail className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-500 font-medium">E-Mail-Server Integration steht in Kürze zur Verfügung.</p>
-                <Button variant="outline" disabled className="mt-2 rounded-xl">SMTP konfigurieren</Button>
+                  <div className="space-y-2">
+                    <Label>Neues Passwort bestätigen</Label>
+                    <Input 
+                      type="password" 
+                      required
+                      value={passwordSettings.confirmPassword}
+                      onChange={(e) => setPasswordSettings({...passwordSettings, confirmPassword: e.target.value})}
+                    />
+                  </div>
+                  <Button type="submit" disabled={loading} className="w-full bg-slate-900 hover:bg-slate-800">
+                    Passwort jetzt ändern
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
