@@ -51,7 +51,7 @@ export function transformCSVToCompany(csv: CompanyCSV): Company {
     employees: Math.floor(Math.random() * 50) + 5,
     rating: parseFloat(csv.rating) || 0,
     reviewCount: parseInt(csv.reviews) || 0,
-    imageUrl: csv.featured_image || "/scaffolding-construction-munich.jpg",
+    imageUrl: csv.featured_image || "/assets/default-company.jpg",
     services: csv.categories ? csv.categories.split(',').map(c => c.trim()) : ["Gerüstbau"],
     certifications: ["TÜV", "DGUV"],
     description: csv.description || `${csv.name} ist Ihr zuverlässiger Partner für Gerüstbau in ${city}.`,
