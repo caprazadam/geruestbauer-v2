@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Star, Users } from "lucide-react"
+import { MapPin, Star, Users, Shield } from "lucide-react"
 import { getLatestCompanies, type Company } from "@/lib/company-data"
 
 export function FeaturedCompanies() {
@@ -78,7 +78,10 @@ export function FeaturedCompanies() {
                 <Users size={16} />
                 <span>{company.employees} Mitarbeiter</span>
               </div>
-              <Badge className="bg-blue-600">Zertifiziert</Badge>
+              <Badge className="bg-slate-900 text-white hover:bg-slate-800 border-none shadow-sm flex items-center gap-1 px-3 py-1">
+                <Shield size={12} className="text-yellow-400 fill-yellow-400" />
+                Zertifiziert
+              </Badge>
             </CardFooter>
           </Card>
         </Link>
