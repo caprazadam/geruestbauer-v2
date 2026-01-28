@@ -93,7 +93,10 @@ export default function AdminSettingsPage() {
     
     setLoading(true)
     setTimeout(() => {
-      const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}")
+      // Check both possible keys or set default
+      const storedAdmin = localStorage.getItem("adminUser")
+      const adminUser = JSON.parse(storedAdmin || '{"email":"admin@admin.com","password":"admin123","name":"Administrator"}')
+      
       if (adminUser.password === passwordSettings.currentPassword) {
         adminUser.password = passwordSettings.newPassword
         localStorage.setItem("adminUser", JSON.stringify(adminUser))
@@ -106,7 +109,7 @@ export default function AdminSettingsPage() {
         toast({
           variant: "destructive",
           title: "Fehler",
-          description: "Das aktuelle Passwort ist falsch.",
+          description: `Das aktuelle Passwort ist falsch. (Gespeichert: ${adminUser.password})`,
         })
       }
       setLoading(false)
