@@ -45,7 +45,7 @@ export default function Header() {
             Kontakt
           </Link>
           <Link href="/firma-eintragen">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button className="bg-slate-900 hover:bg-slate-800 text-white">
               Firma eintragen
             </Button>
           </Link>
@@ -127,7 +127,7 @@ export default function Header() {
                 Kontakt
               </Link>
               <Link href="/firma-eintragen">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2">
+                <Button className="w-full bg-slate-900 hover:bg-slate-800 text-white mt-2">
                   Firma eintragen
                 </Button>
               </Link>

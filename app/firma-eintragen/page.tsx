@@ -42,7 +42,7 @@ const plans = [
       "Bewertungsmanagement",
       "Werbefreies Profil"
     ],
-    color: "blue",
+    color: "slate",
     popular: false
   },
   {
@@ -59,7 +59,7 @@ const plans = [
       "Ausführliches Firmenprofil",
       "50 Bewertungskarten/Jahr"
     ],
-    color: "green",
+    color: "yellow",
     popular: true
   },
   {
@@ -76,7 +76,7 @@ const plans = [
       "Premium-Platzierung",
       "Persönlicher Ansprechpartner"
     ],
-    color: "purple",
+    color: "slate",
     popular: false
   }
 ]
@@ -152,7 +152,7 @@ export default function FirmaEintragenPage() {
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="text-center mb-12">
-          <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">Firma eintragen</Badge>
+          <Badge className="mb-4 bg-slate-900 text-white hover:bg-slate-800">Firma eintragen</Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             In 3 Schritten zu mehr Aufträgen!
           </h1>
@@ -172,14 +172,14 @@ export default function FirmaEintragenPage() {
               <div key={s.num} className="flex items-center">
                 <div className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold transition-all ${
                   step >= s.num 
-                    ? "bg-blue-600 text-white" 
+                    ? "bg-slate-900 text-white" 
                     : "bg-slate-100 text-slate-400"
                 }`}>
                   {step > s.num ? <CheckCircle2 className="h-5 w-5" /> : <span>{s.num}</span>}
                   <span className="hidden sm:inline">{s.label}</span>
                 </div>
                 {i < 2 && (
-                  <div className={`w-8 h-0.5 mx-2 ${step > s.num ? "bg-blue-600" : "bg-slate-200"}`} />
+                  <div className={`w-8 h-0.5 mx-2 ${step > s.num ? "bg-slate-900" : "bg-slate-200"}`} />
                 )}
               </div>
             ))}
@@ -211,7 +211,7 @@ export default function FirmaEintragenPage() {
                   }`}
                 >
                   Jährlich
-                  <Badge className="bg-green-100 text-green-700 text-xs">-20%</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-700 text-xs">-20%</Badge>
                 </button>
               </div>
             </div>
@@ -227,25 +227,25 @@ export default function FirmaEintragenPage() {
                   <Card 
                     key={plan.id} 
                     className={`relative overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 cursor-pointer ${
-                      plan.popular ? "border-2 border-green-500 shadow-lg" : "border-slate-200"
-                    } ${selectedPlan === plan.id ? "ring-2 ring-blue-500" : ""}`}
+                      plan.popular ? "border-2 border-yellow-400 shadow-lg bg-gradient-to-b from-yellow-50/50 to-white" : "border-slate-200"
+                    } ${selectedPlan === plan.id ? "ring-2 ring-slate-900" : ""}`}
                     onClick={() => setSelectedPlan(plan.id)}
                   >
                     {plan.popular && (
-                      <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      <div className="absolute top-0 right-0 bg-yellow-400 text-slate-900 text-xs font-bold px-3 py-1 rounded-bl-lg">
                         Empfohlen
                       </div>
                     )}
                     <CardHeader className="pb-4">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 ${
                         plan.id === "free" ? "bg-slate-100" :
-                        plan.id === "business" ? "bg-blue-100" :
-                        plan.id === "expert" ? "bg-green-100" : "bg-purple-100"
+                        plan.id === "business" ? "bg-slate-100" :
+                        plan.id === "expert" ? "bg-yellow-100" : "bg-slate-900"
                       }`}>
                         {plan.id === "free" && <Building2 className="h-6 w-6 text-slate-600" />}
-                        {plan.id === "business" && <Zap className="h-6 w-6 text-blue-600" />}
-                        {plan.id === "expert" && <Star className="h-6 w-6 text-green-600" />}
-                        {plan.id === "premium" && <Crown className="h-6 w-6 text-purple-600" />}
+                        {plan.id === "business" && <Zap className="h-6 w-6 text-slate-700" />}
+                        {plan.id === "expert" && <Star className="h-6 w-6 text-yellow-600" />}
+                        {plan.id === "premium" && <Crown className="h-6 w-6 text-yellow-400" />}
                       </div>
                       <CardTitle className="text-xl">{plan.name}</CardTitle>
                       <CardDescription>{plan.description}</CardDescription>
@@ -259,9 +259,7 @@ export default function FirmaEintragenPage() {
                         {plan.features.map((feature, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm">
                             <Check className={`h-5 w-5 flex-shrink-0 ${
-                              plan.id === "free" ? "text-slate-500" :
-                              plan.id === "business" ? "text-blue-500" :
-                              plan.id === "expert" ? "text-green-500" : "text-purple-500"
+                              plan.id === "expert" ? "text-yellow-500" : "text-slate-500"
                             }`} />
                             <span className="text-slate-600">{feature}</span>
                           </li>
@@ -271,10 +269,9 @@ export default function FirmaEintragenPage() {
                     <CardFooter>
                       <Button 
                         className={`w-full ${
-                          plan.id === "free" ? "bg-slate-900 hover:bg-slate-800" :
-                          plan.id === "business" ? "bg-blue-600 hover:bg-blue-700" :
-                          plan.id === "expert" ? "bg-green-600 hover:bg-green-700" : 
-                          "bg-purple-600 hover:bg-purple-700"
+                          plan.id === "expert" 
+                            ? "bg-yellow-400 hover:bg-yellow-500 text-slate-900" 
+                            : "bg-slate-900 hover:bg-slate-800 text-white"
                         }`}
                         onClick={(e) => {
                           e.stopPropagation()
@@ -303,7 +300,7 @@ export default function FirmaEintragenPage() {
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-6 w-6 text-blue-600" />
+                <Building2 className="h-6 w-6 text-slate-700" />
                 Firmendaten eingeben
               </CardTitle>
               <CardDescription>
@@ -434,7 +431,7 @@ export default function FirmaEintragenPage() {
                   </Button>
                   <Button 
                     type="submit" 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    className="flex-1 bg-slate-900 hover:bg-slate-800"
                     disabled={isProcessing}
                   >
                     {isProcessing ? "Wird verarbeitet..." : (
@@ -453,7 +450,7 @@ export default function FirmaEintragenPage() {
           <Card className="max-w-lg mx-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-6 w-6 text-blue-600" />
+                <CreditCard className="h-6 w-6 text-slate-700" />
                 Zahlungsinformationen
               </CardTitle>
               <CardDescription>
@@ -466,9 +463,9 @@ export default function FirmaEintragenPage() {
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Gewähltes Paket:</span>
                   <Badge className={`${
-                    selectedPlan === "business" ? "bg-blue-100 text-blue-700" :
-                    selectedPlan === "expert" ? "bg-green-100 text-green-700" :
-                    "bg-purple-100 text-purple-700"
+                    selectedPlan === "expert" 
+                      ? "bg-yellow-100 text-yellow-700" 
+                      : "bg-slate-100 text-slate-700"
                   }`}>
                     {selectedPlanData.name}
                   </Badge>
@@ -501,7 +498,7 @@ export default function FirmaEintragenPage() {
                 <Button 
                   onClick={handlePayment}
                   disabled={isProcessing}
-                  className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg"
+                  className="w-full bg-slate-900 hover:bg-slate-800 h-12 text-lg"
                 >
                   {isProcessing ? (
                     <span className="flex items-center gap-2">
@@ -545,8 +542,8 @@ export default function FirmaEintragenPage() {
         {step === 4 && (
           <Card className="max-w-lg mx-auto text-center">
             <CardContent className="pt-12 pb-8">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="h-10 w-10 text-green-600" />
+              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="h-10 w-10 text-yellow-600" />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 mb-2">
                 Herzlichen Glückwunsch!
@@ -555,7 +552,7 @@ export default function FirmaEintragenPage() {
                 Ihre Firma wurde erfolgreich registriert. Sie erhalten in Kürze eine Bestätigungs-E-Mail.
               </p>
               <div className="space-y-3">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700" asChild>
+                <Button className="w-full bg-slate-900 hover:bg-slate-800" asChild>
                   <a href="/companies">Alle Firmen ansehen</a>
                 </Button>
                 <Button variant="outline" className="w-full" asChild>
