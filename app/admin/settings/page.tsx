@@ -93,9 +93,26 @@ export default function AdminSettingsPage() {
     
     setLoading(true)
     setTimeout(() => {
-      // Check both possible keys or set default
+      // Robust retrieval of admin data
       const storedAdmin = localStorage.getItem("adminUser")
-      const adminUser = JSON.parse(storedAdmin || '{"email":"admin@admin.com","password":"admin123","name":"Administrator"}')
+      let adminUser
+      
+      try {
+        adminUser = storedAdmin ? JSON.parse(storedAdmin) : null
+      } catch (e) {
+        adminUser = null
+      }
+
+      // If for some reason it's still missing or malformed, fallback to default
+      if (!adminUser || !adminUser.password) {
+        adminUser = {
+          email: "admin@admin.com",
+          password: "admin123",
+          name: "Administrator"
+        }
+        // Save it back to ensure it exists for next time
+        localStorage.setItem("adminUser", JSON.stringify(adminUser))
+      }
       
       if (adminUser.password === passwordSettings.currentPassword) {
         adminUser.password = passwordSettings.newPassword
@@ -109,7 +126,7 @@ export default function AdminSettingsPage() {
         toast({
           variant: "destructive",
           title: "Fehler",
-          description: `Das aktuelle Passwort ist falsch. (Gespeichert: ${adminUser.password})`,
+          description: `Das aktuelle Passwort ist falsch.`,
         })
       }
       setLoading(false)
