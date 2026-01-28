@@ -19,13 +19,22 @@ import {
   Code, 
   Lock, 
   Search,
-  CheckCircle2
+  CheckCircle2,
+  CreditCard
 } from "lucide-react"
 
 export default function AdminSettingsPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   
+  // Stripe Settings
+  const [stripeSettings, setStripeSettings] = useState({
+    publicKey: "",
+    secretKey: "",
+    webhookSecret: "",
+    isTestMode: true
+  })
+
   // Site Metadata & SEO
   const [seoSettings, setSeoSettings] = useState({
     siteTitle: "Gerüstbauer-Verzeichnis",
@@ -52,9 +61,23 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const savedSeo = localStorage.getItem("seoSettings")
     const savedGeneral = localStorage.getItem("generalSettings")
+    const savedStripe = localStorage.getItem("stripeSettings")
     if (savedSeo) setSeoSettings(JSON.parse(savedSeo))
     if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral))
+    if (savedStripe) setStripeSettings(JSON.parse(savedStripe))
   }, [])
+
+  const handleSaveStripe = () => {
+    setLoading(true)
+    setTimeout(() => {
+      localStorage.setItem("stripeSettings", JSON.stringify(stripeSettings))
+      setLoading(false)
+      toast({
+        title: "Stripe-Einstellungen gespeichert",
+        description: "Die API-Konfiguration wurde erfolgreich aktualisiert.",
+      })
+    }, 800)
+  }
 
   const handleSaveSeo = () => {
     setLoading(true)
@@ -154,6 +177,10 @@ export default function AdminSettingsPage() {
             <TabsTrigger value="security" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <Shield className="h-4 w-4 mr-2" />
               Sicherheit
+            </TabsTrigger>
+            <TabsTrigger value="payment" className="rounded-lg px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Code className="h-4 w-4 mr-2" />
+              Zahlung (Stripe)
             </TabsTrigger>
           </TabsList>
 
@@ -330,6 +357,73 @@ export default function AdminSettingsPage() {
                     Passwort jetzt ändern
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Stripe Payment Content */}
+          <TabsContent value="payment">
+            <Card className="border-none shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  Stripe-Konfiguration
+                </CardTitle>
+                <CardDescription>Verwalten Sie Ihre Stripe API-Schlüssel für Zahlungen</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-xl border border-blue-100 mb-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-base font-bold text-blue-900">Testmodus</Label>
+                    <p className="text-sm text-blue-600">Verwenden Sie Stripe-Testschlüssel (Sandbox)</p>
+                  </div>
+                  <Switch 
+                    checked={stripeSettings.isTestMode}
+                    onCheckedChange={(val: boolean) => setStripeSettings({...stripeSettings, isTestMode: val})}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Stripe Public Key (Veröffentlichbarer Schlüssel)</Label>
+                  <Input 
+                    value={stripeSettings.publicKey}
+                    onChange={(e) => setStripeSettings({...stripeSettings, publicKey: e.target.value})}
+                    placeholder="pk_test_..."
+                    type="password"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Stripe Secret Key (Geheimer Schlüssel)</Label>
+                  <Input 
+                    value={stripeSettings.secretKey}
+                    onChange={(e) => setStripeSettings({...stripeSettings, secretKey: e.target.value})}
+                    placeholder="sk_test_..."
+                    type="password"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Stripe Webhook Secret</Label>
+                  <Input 
+                    value={stripeSettings.webhookSecret}
+                    onChange={(e) => setStripeSettings({...stripeSettings, webhookSecret: e.target.value})}
+                    placeholder="whsec_..."
+                    type="password"
+                  />
+                </div>
+
+                <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-amber-800 text-sm">
+                  <p className="font-bold mb-1">Hinweis:</p>
+                  <p>Bitte stellen Sie sicher, dass Ihre API-Schlüssel korrekt sind. Diese Schlüssel werden für die Abwicklung von Firmen-Abonnements und Zahlungen verwendet.</p>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <Button onClick={handleSaveStripe} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    Stripe-Daten speichern
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
