@@ -13,11 +13,23 @@ import { toast } from "sonner"
 import { parseCompanyCSV, transformCSVToCompany } from "@/lib/csv-parser"
 import { saveCompaniesToStorage, getAllStoredCompanies } from "@/lib/company-storage"
 import type { Company } from "@/lib/company-data"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 export default function AdminCompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [storedCompanies, setStoredCompanies] = useState<Company[]>([])
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
+  const [isViewOpen, setIsViewOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editData, setEditData] = useState<Partial<Company>>({})
 
   useEffect(() => {
     setStoredCompanies(getAllStoredCompanies())
@@ -33,7 +45,8 @@ export default function AdminCompaniesPage() {
       const csvData = parseCompanyCSV(text)
       const newCompanies = csvData.map(transformCSVToCompany)
       
-      saveCompaniesToStorage([...newCompanies, ...storedCompanies])
+      const updated = [...newCompanies, ...storedCompanies]
+      saveCompaniesToStorage(updated)
       setStoredCompanies(getAllStoredCompanies())
       
       toast.success(`${newCompanies.length} Firmen erfolgreich importiert`)
@@ -46,6 +59,26 @@ export default function AdminCompaniesPage() {
     }
   }
 
+  const handleDelete = (id: string) => {
+    if (confirm("Möchten Sie diese Firma wirklich löschen?")) {
+      const updated = storedCompanies.filter(c => c.id !== id)
+      saveCompaniesToStorage(updated)
+      setStoredCompanies(updated)
+      toast.success("Firma gelöscht")
+    }
+  }
+
+  const handleEditSave = () => {
+    if (!selectedCompany) return
+    const updated = storedCompanies.map(c => 
+      c.id === selectedCompany.id ? { ...c, ...editData } : c
+    )
+    saveCompaniesToStorage(updated)
+    setStoredCompanies(updated)
+    setIsEditOpen(false)
+    toast.success("Änderungen gespeichert")
+  }
+
   const mockCompanies = [
     {
       id: "mock-1",
@@ -53,6 +86,10 @@ export default function AdminCompaniesPage() {
       city: "Berlin",
       rating: 4.8,
       status: "active",
+      address: "Musterstraße 1, 10115 Berlin",
+      phone: "+49 30 1234567",
+      email: "info@mueller-geruestbau.de",
+      services: ["Fassadengerüst", "Rollgerüst"]
     },
     {
       id: "mock-2",
@@ -60,6 +97,10 @@ export default function AdminCompaniesPage() {
       city: "München",
       rating: 4.6,
       status: "active",
+      address: "Beispielweg 42, 80331 München",
+      phone: "+49 89 9876543",
+      email: "kontakt@schmidt-bau.de",
+      services: ["Dachdeckergerüst", "Spezialgerüst"]
     }
   ]
 
@@ -163,15 +204,25 @@ export default function AdminCompaniesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedCompany(company as Company)
+                            setIsViewOpen(true)
+                          }}>
                             <Eye className="h-4 w-4 mr-2" />
                             Anzeigen
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedCompany(company as Company)
+                            setEditData(company)
+                            setIsEditOpen(true)
+                          }}>
                             <Edit className="h-4 w-4 mr-2" />
                             Bearbeiten
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDelete(company.id)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Löschen
                           </DropdownMenuItem>
@@ -185,6 +236,90 @@ export default function AdminCompaniesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedCompany?.name}</DialogTitle>
+            <DialogDescription>Details der Gerüstbau-Firma</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Stadt</Label>
+              <div className="col-span-3">{selectedCompany?.city}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Adresse</Label>
+              <div className="col-span-3">{(selectedCompany as any)?.address || "Nicht angegeben"}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Telefon</Label>
+              <div className="col-span-3">{(selectedCompany as any)?.phone || "Nicht angegeben"}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">E-Mail</Label>
+              <div className="col-span-3">{(selectedCompany as any)?.email || "Nicht angegeben"}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Leistungen</Label>
+              <div className="col-span-3 flex flex-wrap gap-1">
+                {selectedCompany?.services?.map((s, i) => (
+                  <Badge key={i} variant="outline">{s}</Badge>
+                )) || "Keine"}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Firma bearbeiten</DialogTitle>
+            <DialogDescription>Aktualisieren Sie die Firmendaten</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                value={editData.name || ""} 
+                onChange={(e) => setEditData({...editData, name: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="city">Stadt</Label>
+              <Input 
+                id="city" 
+                value={editData.city || ""} 
+                onChange={(e) => setEditData({...editData, city: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="phone">Telefon</Label>
+              <Input 
+                id="phone" 
+                value={(editData as any).phone || ""} 
+                onChange={(e) => setEditData({...editData, phone: e.target.value} as any)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="email">E-Mail</Label>
+              <Input 
+                id="email" 
+                value={(editData as any).email || ""} 
+                onChange={(e) => setEditData({...editData, email: e.target.value} as any)}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">Speichern</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   )
 }
