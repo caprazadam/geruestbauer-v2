@@ -229,7 +229,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <Switch 
                       checked={generalSettings.maintenanceMode}
-                      onCheckedChange={(val) => setGeneralSettings({...generalSettings, maintenanceMode: val})}
+                      onCheckedChange={(val: boolean) => setGeneralSettings({...generalSettings, maintenanceMode: val})}
                     />
                   </div>
 
@@ -240,7 +240,7 @@ export default function AdminSettingsPage() {
                     </div>
                     <Switch 
                       checked={generalSettings.allowRegistration}
-                      onCheckedChange={(val) => setGeneralSettings({...generalSettings, allowRegistration: val})}
+                      onCheckedChange={(val: boolean) => setGeneralSettings({...generalSettings, allowRegistration: val})}
                     />
                   </div>
                 </div>
