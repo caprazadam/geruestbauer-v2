@@ -6,10 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Building2, Users, Star, TrendingUp, BarChart3, Settings, ShieldCheck, Database, LayoutDashboard, Search, Plus } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
+import { getAllStoredCompanies } from "@/lib/company-storage"
+import { companies as mockCompanies } from "@/lib/company-data"
 
 export default function AdminDashboardPage() {
   const router = useRouter()
   const [adminUser, setAdminUser] = useState<any>(null)
+  const [dashboardStats, setDashboardStats] = useState<any>(null)
 
   useEffect(() => {
     const user = localStorage.getItem("adminUser")
@@ -18,16 +21,36 @@ export default function AdminDashboardPage() {
       return
     }
     setAdminUser(JSON.parse(user))
+
+    // Real-time stats calculation
+    const stored = getAllStoredCompanies()
+    const allCompanies = [...stored, ...mockCompanies]
+    
+    const totalCompanies = allCompanies.length
+    const totalReviews = allCompanies.reduce((acc, c) => acc + (c.reviewCount || 0), 0)
+    const avgRating = totalCompanies > 0 ? (allCompanies.reduce((acc, c) => acc + (c.rating || 0), 0) / totalCompanies).toFixed(1) : "0.0"
+
+    setDashboardStats({
+      totalCompanies,
+      totalReviews,
+      avgRating,
+      activeUsers: "1.234",
+      recentActivities: allCompanies.slice(0, 4).map(c => ({
+        company: c.name,
+        action: "Firma im System aktiv",
+        time: "Aktualisiert"
+      }))
+    })
   }, [router])
 
-  if (!adminUser) {
+  if (!adminUser || !dashboardStats) {
     return null
   }
 
   const stats = [
     {
       title: "Firmen gesamt",
-      value: "47",
+      value: dashboardStats.totalCompanies.toString(),
       change: "+12%",
       icon: Building2,
       color: "text-blue-600",
@@ -35,7 +58,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Aktive Benutzer",
-      value: "1,234",
+      value: dashboardStats.activeUsers,
       change: "+23%",
       icon: Users,
       color: "text-green-600",
@@ -43,8 +66,8 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Bewertungen",
-      value: "892",
-      change: "+8%",
+      value: dashboardStats.totalReviews.toString(),
+      change: `∅ ${dashboardStats.avgRating}`,
       icon: Star,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
@@ -56,29 +79,6 @@ export default function AdminDashboardPage() {
       icon: TrendingUp,
       color: "text-purple-600",
       bgColor: "bg-purple-100",
-    },
-  ]
-
-  const recentActivities = [
-    {
-      company: "Müller Gerüstbau GmbH",
-      action: "Neue Firma registriert",
-      time: "vor 2 Stunden",
-    },
-    {
-      company: "Schmidt Baugerüste",
-      action: "Profil aktualisiert",
-      time: "vor 5 Stunden",
-    },
-    {
-      company: "Weber Gerüsttechnik",
-      action: "Neue Bewertung erhalten (5 Sterne)",
-      time: "vor 1 Tag",
-    },
-    {
-      company: "Becker Gerüstbau",
-      action: "Zertifizierung hinzugefügt",
-      time: "vor 2 Tagen",
     },
   ]
 
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
                   <div className="text-3xl font-extrabold text-slate-900">{stat.value}</div>
                   <div className="flex items-center gap-1.5 mt-2">
                     <span className="text-xs font-bold text-green-600 px-1.5 py-0.5 bg-green-50 rounded-md">{stat.change}</span>
-                    <span className="text-xs text-slate-400">vs. Vormonat</span>
+                    <span className="text-xs text-slate-400">Status</span>
                   </div>
                 </CardContent>
               </Card>
@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                {recentActivities.map((activity, index) => (
+                {dashboardStats.recentActivities.map((activity: any, index: number) => (
                   <div key={index} className="flex items-start gap-4 pb-4 border-b border-slate-50 last:border-0 last:pb-0 group cursor-default">
                     <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors">
                       <Building2 className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
