@@ -44,6 +44,11 @@ export default function Header() {
           <Link href="/contact" className="hover:text-gray-600 transition-colors">
             Kontakt
           </Link>
+          <Link href="/firma-eintragen">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              Firma eintragen
+            </Button>
+          </Link>
 
           {!isLoading && (
             <>
@@ -120,6 +125,11 @@ export default function Header() {
               </Link>
               <Link href="/contact" className="flex items-center gap-2 py-2">
                 Kontakt
+              </Link>
+              <Link href="/firma-eintragen">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2">
+                  Firma eintragen
+                </Button>
               </Link>
 
               {!isLoading && (
