@@ -88,7 +88,7 @@ export default function Header() {
                   <Link href="/auth/signin">
                     <Button variant="outline">Anmelden</Button>
                   </Link>
-                  <Link href="/firma-eintragen">
+                  <Link href="/auth/signup">
                     <Button>Registrieren</Button>
                   </Link>
                 </div>
@@ -158,7 +158,7 @@ export default function Header() {
                           Anmelden
                         </Button>
                       </Link>
-                      <Link href="/firma-eintragen">
+                      <Link href="/auth/signup">
                         <Button className="w-full">Registrieren</Button>
                       </Link>
                     </div>
