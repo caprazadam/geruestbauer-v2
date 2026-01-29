@@ -258,7 +258,10 @@ export default function SignIn() {
             </form>
           )}
         </CardContent>
-        <CardFooter className="flex justify-center">
+        <CardFooter className="flex flex-col gap-3">
+          <Link href="/passwort-vergessen" className="text-sm text-slate-500 hover:text-primary hover:underline">
+            Passwort vergessen?
+          </Link>
           <p className="text-sm text-center">
             Noch kein Konto?{" "}
             <Link href="/auth/signup" className="text-primary hover:underline">
