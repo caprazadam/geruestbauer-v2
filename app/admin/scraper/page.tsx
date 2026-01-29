@@ -137,7 +137,7 @@ export default function ScraperPage() {
           employees: result.employees || 0,
           rating: Number((Math.random() * 1 + 4).toFixed(1)),
           reviewCount: Math.floor(Math.random() * 100) + 10,
-          imageUrl: `/placeholder.svg?height=400&width=600&query=scaffolding+construction+site`,
+          imageUrl: `/professional-scaffolding-berlin.jpg`,
           services: ["fassadengerust", "arbeitsgerust", "schutzgerust"],
           certifications: ["ISO 9001", "TÜV"],
           description: `${companyName} ist Ihr zuverlässiger Partner für professionellen Gerüstbau in ${cityName}. Wir bieten umfassende Leistungen von Fassadengerüsten bis zu Spezialgerüsten. Kontaktieren Sie uns für eine individuelle Beratung.`,

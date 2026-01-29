@@ -112,7 +112,7 @@ export default function CompanyDetailPage({ params }: Props) {
         <div className="lg:col-span-2">
           <div className="relative h-96 rounded-lg overflow-hidden mb-6">
             <Image
-              src={company.imageUrl || "/placeholder.svg?height=400&width=800&query=scaffolding+construction"}
+              src={company.imageUrl || "/professional-scaffolding-berlin.jpg"}
               alt={company.name}
               fill
               className="object-cover"

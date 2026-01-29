@@ -209,10 +209,7 @@ export default function CompaniesPage() {
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
                     <div className="relative h-48">
                       <Image
-                        src={
-                          company.imageUrl ||
-                          "/placeholder.svg?height=300&width=400&query=scaffolding+construction+site"
-                        }
+                        src={company.imageUrl || "/professional-scaffolding-berlin.jpg"}
                         alt={company.name}
                         fill
                         className="object-cover"

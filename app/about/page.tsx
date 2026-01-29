@@ -33,7 +33,7 @@ export default function AboutPage() {
         </div>
         <div className="relative h-80 md:h-96">
           <Image
-            src="/placeholder.svg?height=600&width=800"
+            src="/construction-scaffolding-team.jpg"
             alt="Gerüstbau Landschaft"
             fill
             className="object-cover rounded-lg"

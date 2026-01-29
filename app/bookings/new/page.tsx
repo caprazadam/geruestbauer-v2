@@ -85,7 +85,7 @@ export default function NewBookingPage() {
         title: "Luxury Villa with Mountain View",
         location: "Ooty, Nilgiris",
         price: 12000,
-        imageUrl: "/placeholder.svg?height=300&width=400",
+        imageUrl: "/luxury-villa-mountain.jpg",
         checkIn: "2:00 PM",
         checkOut: "11:00 AM",
       }
