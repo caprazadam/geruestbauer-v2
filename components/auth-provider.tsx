@@ -11,6 +11,7 @@ type User = {
   phone: string
   role: "customer" | "owner" | "admin"
   otpMethod: "email" | "phone"
+  isVerified?: boolean
 }
 
 type AuthContextType = {
@@ -20,6 +21,7 @@ type AuthContextType = {
   signUp: (userData: Partial<User>, otp: string) => Promise<void>
   signOut: () => void
   requestOtp: (identifier: string, method: "email" | "phone", phone?: string) => Promise<void>
+  verifyOtp: (email: string, otp: string) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -27,22 +29,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [pendingUserData, setPendingUserData] = useState<Partial<User> | null>(null)
   const router = useRouter()
   const pathname = usePathname()
   const { toast } = useToast()
 
   useEffect(() => {
-    // Check if user is logged in
     const checkAuth = async () => {
       try {
-        // This would be an actual API call to check authentication status
         const storedUser = localStorage.getItem("user")
 
         if (storedUser) {
           setUser(JSON.parse(storedUser))
         }
       } catch (error) {
-        console.error("Authentication check failed:", error)
+        console.error("Authentifizierungsprüfung fehlgeschlagen:", error)
       } finally {
         setIsLoading(false)
       }
@@ -51,7 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth()
   }, [])
 
-  // Protect routes that require authentication
   useEffect(() => {
     if (!isLoading) {
       const protectedPaths = ["/dashboard", "/properties/create", "/bookings", "/profile"]
@@ -60,48 +60,139 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (isProtectedPath && !user) {
         toast({
-          title: "Authentication required",
-          description: "Please sign in to access this page",
+          title: "Anmeldung erforderlich",
+          description: "Bitte melden Sie sich an, um auf diese Seite zuzugreifen",
           variant: "destructive",
         })
         router.push("/auth/signin")
       }
 
-      // Redirect from auth pages if already logged in
       if ((pathname === "/auth/signin" || pathname === "/auth/signup") && user) {
         router.push("/dashboard")
       }
     }
   }, [pathname, user, isLoading, router, toast])
 
+  const requestOtp = async (identifier: string, method: "email" | "phone", phone?: string) => {
+    setIsLoading(true)
+    try {
+      if (method === "email") {
+        const response = await fetch("/api/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            email: identifier, 
+            name: pendingUserData?.name || "Nutzer" 
+          })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || "Fehler beim Senden des Codes")
+        }
+
+        toast({
+          title: "Verifizierungscode gesendet",
+          description: `Ein Code wurde an ${identifier} gesendet. Der Code ist 10 Minuten gültig.`,
+        })
+      } else {
+        toast({
+          title: "SMS nicht verfügbar",
+          description: "SMS-Verifizierung ist derzeit nicht verfügbar. Bitte verwenden Sie E-Mail.",
+          variant: "destructive",
+        })
+        throw new Error("SMS nicht verfügbar")
+      }
+
+      return Promise.resolve()
+    } catch (error: any) {
+      console.error("OTP-Anfrage fehlgeschlagen:", error)
+      toast({
+        title: "Fehler beim Senden",
+        description: error.message || "Der Code konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+      return Promise.reject(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const verifyOtp = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/send-otp", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.verified) {
+        return true
+      } else {
+        toast({
+          title: "Ungültiger Code",
+          description: data.error || "Der eingegebene Code ist ungültig oder abgelaufen.",
+          variant: "destructive",
+        })
+        return false
+      }
+    } catch (error) {
+      console.error("OTP-Verifizierung fehlgeschlagen:", error)
+      toast({
+        title: "Verifizierung fehlgeschlagen",
+        description: "Es gab einen Fehler bei der Verifizierung. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+      return false
+    }
+  }
+
   const signIn = async (identifier: string, otp: string, identifierType: "email" | "phone") => {
     setIsLoading(true)
     try {
-      // This would be an actual API call to verify OTP and sign in
-      // Simulating API response
-      const mockUser: User = {
-        id: "user-123",
-        name: "John Doe",
-        email: identifierType === "email" ? identifier : "user@example.com",
-        phone: identifierType === "phone" ? identifier : "+91 9876543210",
-        role: "customer",
-        otpMethod: identifierType,
+      if (identifierType === "email") {
+        const verified = await verifyOtp(identifier, otp)
+        if (!verified) {
+          setIsLoading(false)
+          return
+        }
       }
 
-      setUser(mockUser)
-      localStorage.setItem("user", JSON.stringify(mockUser))
+      const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
+      const existingUser = existingUsers.find((u: User) => u.email === identifier)
+
+      if (existingUser) {
+        existingUser.isVerified = true
+        setUser(existingUser)
+        localStorage.setItem("user", JSON.stringify(existingUser))
+      } else {
+        const mockUser: User = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name: "Nutzer",
+          email: identifierType === "email" ? identifier : "",
+          phone: identifierType === "phone" ? identifier : "",
+          role: "customer",
+          otpMethod: identifierType,
+          isVerified: true
+        }
+        setUser(mockUser)
+        localStorage.setItem("user", JSON.stringify(mockUser))
+      }
 
       toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
+        title: "Willkommen zurück!",
+        description: "Sie haben sich erfolgreich angemeldet.",
       })
 
       router.push("/dashboard")
     } catch (error) {
-      console.error("Sign in failed:", error)
+      console.error("Anmeldung fehlgeschlagen:", error)
       toast({
-        title: "Sign in failed",
-        description: "Invalid OTP or credentials. Please try again.",
+        title: "Anmeldung fehlgeschlagen",
+        description: "Ungültiger Code. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       })
     } finally {
@@ -112,31 +203,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (userData: Partial<User>, otp: string) => {
     setIsLoading(true)
     try {
-      // This would be an actual API call to verify OTP and create account
-      // Simulating API response
-      const mockUser: User = {
+      const verified = await verifyOtp(userData.email || "", otp)
+      if (!verified) {
+        setIsLoading(false)
+        return
+      }
+
+      const newUser: User = {
         id: "user-" + Math.random().toString(36).substring(2, 9),
-        name: userData.name || "New User",
+        name: userData.name || "Neuer Nutzer",
         email: userData.email || "",
         phone: userData.phone || "",
         role: userData.role || "customer",
         otpMethod: userData.otpMethod || "email",
+        isVerified: true
       }
 
-      setUser(mockUser)
-      localStorage.setItem("user", JSON.stringify(mockUser))
+      const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
+      existingUsers.push(newUser)
+      localStorage.setItem("registeredUsers", JSON.stringify(existingUsers))
+
+      setUser(newUser)
+      localStorage.setItem("user", JSON.stringify(newUser))
 
       toast({
-        title: "Account created",
-        description: "Your account has been successfully created.",
+        title: "Konto erstellt",
+        description: "Ihr Konto wurde erfolgreich erstellt.",
       })
 
       router.push("/dashboard")
     } catch (error) {
-      console.error("Sign up failed:", error)
+      console.error("Registrierung fehlgeschlagen:", error)
       toast({
-        title: "Sign up failed",
-        description: "Invalid OTP or information. Please try again.",
+        title: "Registrierung fehlgeschlagen",
+        description: "Ungültiger Code oder ungültige Daten. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       })
     } finally {
@@ -148,33 +248,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     localStorage.removeItem("user")
     toast({
-      title: "Signed out",
-      description: "You have been successfully signed out.",
+      title: "Abgemeldet",
+      description: "Sie wurden erfolgreich abgemeldet.",
     })
     router.push("/")
-  }
-
-  const requestOtp = async (identifier: string, method: "email" | "phone", phone?: string) => {
-    try {
-      // This would be an actual API call to request OTP
-      // Simulating API response
-      const destination = method === "email" ? identifier : phone || identifier
-
-      toast({
-        title: "OTP Sent",
-        description: `An OTP has been sent to your ${method === "email" ? "email address" : "mobile number"} (${destination}).`,
-      })
-
-      return Promise.resolve()
-    } catch (error) {
-      console.error("OTP request failed:", error)
-      toast({
-        title: "OTP request failed",
-        description: "Failed to send OTP. Please try again.",
-        variant: "destructive",
-      })
-      return Promise.reject(error)
-    }
   }
 
   const value = {
@@ -184,6 +261,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     requestOtp,
+    verifyOtp,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

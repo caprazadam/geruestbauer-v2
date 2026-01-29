@@ -9,9 +9,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
+import { Mail, RefreshCw } from "lucide-react"
 
 export default function SignUp() {
   const [step, setStep] = useState(1)
@@ -19,17 +19,14 @@ export default function SignUp() {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [role, setRole] = useState<"customer" | "owner">("customer")
-  const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email")
   const [otp, setOtp] = useState("")
   const [phoneError, setPhoneError] = useState("")
-  const { signUp, requestOtp, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const validatePhone = (phoneNumber: string) => {
-    // Remove spaces and dashes
     const cleanPhone = phoneNumber.replace(/[\s-]/g, "")
-
-    // German phone number regex
     const phoneRegex = /^(\+49|0)[1-9][0-9]{8,15}$/
 
     if (!phoneRegex.test(cleanPhone)) {
@@ -63,11 +60,72 @@ export default function SignUp() {
       return
     }
 
+    setIsLoading(true)
+
     try {
-      await requestOtp(email, otpMethod, phone)
-      setStep(2)
+      const response = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Verifizierungscode gesendet",
+          description: `Ein Code wurde an ${email} gesendet. Der Code ist 10 Minuten gültig.`,
+        })
+        setStep(2)
+      } else {
+        toast({
+          title: "Fehler beim Senden",
+          description: data.error || "Der Code konnte nicht gesendet werden.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Fehler beim Anfordern des OTP:", error)
+      toast({
+        title: "Verbindungsfehler",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Neuer Code gesendet",
+          description: "Ein neuer Verifizierungscode wurde gesendet.",
+        })
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Fehler",
+          description: data.error || "Der Code konnte nicht gesendet werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Verbindungsfehler",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -76,17 +134,62 @@ export default function SignUp() {
 
     if (!otp) {
       toast({
-        title: "OTP erforderlich",
-        description: "Bitte geben Sie das erhaltene Einmalpasswort ein",
+        title: "Code erforderlich",
+        description: "Bitte geben Sie den erhaltenen Verifizierungscode ein",
         variant: "destructive",
       })
       return
     }
 
+    setIsLoading(true)
+
     try {
-      await signUp({ name, email, phone, role, otpMethod }, otp)
+      const response = await fetch("/api/send-otp", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.verified) {
+        const newUser = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name,
+          email,
+          phone,
+          role,
+          otpMethod: "email",
+          isVerified: true
+        }
+
+        const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
+        existingUsers.push(newUser)
+        localStorage.setItem("registeredUsers", JSON.stringify(existingUsers))
+        localStorage.setItem("user", JSON.stringify(newUser))
+
+        toast({
+          title: "Konto erstellt",
+          description: "Ihr Konto wurde erfolgreich erstellt.",
+        })
+
+        router.push("/dashboard")
+      } else {
+        toast({
+          title: "Ungültiger Code",
+          description: data.error || "Der eingegebene Code ist ungültig oder abgelaufen.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Registrierung fehlgeschlagen:", error)
+      toast({
+        title: "Fehler",
+        description: "Die Registrierung ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -95,7 +198,12 @@ export default function SignUp() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Konto erstellen</CardTitle>
-          <CardDescription>Registrieren Sie sich, um das Verzeichnis zu nutzen</CardDescription>
+          <CardDescription>
+            {step === 1 
+              ? "Registrieren Sie sich, um das Verzeichnis zu nutzen"
+              : `Wir haben einen Code an ${email} gesendet`
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {step === 1 ? (
@@ -116,7 +224,7 @@ export default function SignUp() {
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="block text-sm font-medium">
-                  E-Mail
+                  E-Mail-Adresse
                 </Label>
                 <Input
                   id="email"
@@ -157,45 +265,50 @@ export default function SignUp() {
                 </RadioGroup>
               </div>
 
-              <div className="space-y-2">
-                <Label className="block text-sm font-medium">OTP-Zustellung</Label>
-                <Select value={otpMethod} onValueChange={(value: "email" | "phone") => setOtpMethod(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Zustellmethode wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="email">E-Mail</SelectItem>
-                    <SelectItem value="phone">SMS</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <span>Ein Verifizierungscode wird an Ihre E-Mail-Adresse gesendet.</span>
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading || !!phoneError}>
-                {isLoading ? "Wird verarbeitet..." : "Weiter"}
+                {isLoading ? "Wird gesendet..." : "Weiter"}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="otp" className="block text-sm font-medium">
-                  OTP
+                  Verifizierungscode
                 </Label>
                 <Input
                   id="otp"
                   type="text"
-                  placeholder="OTP eingeben"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="6-stelliger Code"
+                  className="text-center text-xl tracking-widest"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Wird erstellt..." : "Konto erstellen"}
+              <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
+                {isLoading ? "Wird verifiziert..." : "Konto erstellen"}
               </Button>
-              <div className="text-center">
-                <Button variant="link" onClick={() => setStep(1)} type="button">
+              <div className="flex items-center justify-between pt-2">
+                <Button variant="link" onClick={() => setStep(1)} type="button" className="px-0">
                   Zurück
                 </Button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Code erneut senden
+                </button>
               </div>
             </form>
           )}

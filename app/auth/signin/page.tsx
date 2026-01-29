@@ -7,59 +7,111 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation"
+import { Mail, RefreshCw } from "lucide-react"
 
 export default function SignIn() {
-  const [identifier, setIdentifier] = useState("")
-  const [identifierType, setIdentifierType] = useState<"email" | "phone">("email")
+  const [email, setEmail] = useState("")
   const [otp, setOtp] = useState("")
   const [otpSent, setOtpSent] = useState(false)
-  const { signIn, requestOtp, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
-  const validateIdentifier = () => {
-    if (identifierType === "email") {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      return emailRegex.test(identifier)
-    } else {
-      const phoneRegex = /^(\+49|0)[1-9][0-9]{8,15}$/
-      return phoneRegex.test(identifier.replace(/[\s-]/g, ""))
-    }
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
   }
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!identifier) {
+    if (!email) {
       toast({
-        title: `${identifierType === "email" ? "E-Mail" : "Telefonnummer"} erforderlich`,
-        description: `Bitte geben Sie Ihre ${identifierType === "email" ? "E-Mail-Adresse" : "Telefonnummer"} ein`,
+        title: "E-Mail erforderlich",
+        description: "Bitte geben Sie Ihre E-Mail-Adresse ein",
         variant: "destructive",
       })
       return
     }
 
-    if (!validateIdentifier()) {
+    if (!validateEmail(email)) {
       toast({
-        title: `Ungültige ${identifierType === "email" ? "E-Mail" : "Telefonnummer"}`,
-        description: "Bitte geben Sie korrekte Daten ein",
+        title: "Ungültige E-Mail",
+        description: "Bitte geben Sie eine gültige E-Mail-Adresse ein",
         variant: "destructive",
       })
       return
     }
+
+    setIsLoading(true)
 
     try {
-      await requestOtp(identifier, identifierType)
-      setOtpSent(true)
-      toast({
-        title: "OTP gesendet",
-        description: `Ein Einmalpasswort wurde an Ihre ${identifierType === "email" ? "E-Mail-Adresse" : "Telefonnummer"} gesendet`,
+      const response = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name: "Nutzer" })
       })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast({
+          title: "Verifizierungscode gesendet",
+          description: `Ein Code wurde an ${email} gesendet. Der Code ist 10 Minuten gültig.`,
+        })
+        setOtpSent(true)
+      } else {
+        toast({
+          title: "Fehler beim Senden",
+          description: data.error || "Der Code konnte nicht gesendet werden.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Fehler beim Anfordern des OTP:", error)
+      toast({
+        title: "Verbindungsfehler",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name: "Nutzer" })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Neuer Code gesendet",
+          description: "Ein neuer Verifizierungscode wurde gesendet.",
+        })
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Fehler",
+          description: data.error || "Der Code konnte nicht gesendet werden.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Verbindungsfehler",
+        description: "Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -68,17 +120,66 @@ export default function SignIn() {
 
     if (!otp) {
       toast({
-        title: "OTP erforderlich",
-        description: "Bitte geben Sie das erhaltene Einmalpasswort ein",
+        title: "Code erforderlich",
+        description: "Bitte geben Sie den erhaltenen Verifizierungscode ein",
         variant: "destructive",
       })
       return
     }
 
+    setIsLoading(true)
+
     try {
-      await signIn(identifier, otp, identifierType)
+      const response = await fetch("/api/send-otp", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.verified) {
+        const existingUsers = JSON.parse(localStorage.getItem("registeredUsers") || "[]")
+        const existingUser = existingUsers.find((u: any) => u.email === email)
+
+        if (existingUser) {
+          existingUser.isVerified = true
+          localStorage.setItem("user", JSON.stringify(existingUser))
+        } else {
+          const newUser = {
+            id: "user-" + Math.random().toString(36).substring(2, 9),
+            name: "Nutzer",
+            email,
+            phone: "",
+            role: "customer",
+            otpMethod: "email",
+            isVerified: true
+          }
+          localStorage.setItem("user", JSON.stringify(newUser))
+        }
+
+        toast({
+          title: "Willkommen zurück!",
+          description: "Sie haben sich erfolgreich angemeldet.",
+        })
+
+        router.push("/dashboard")
+      } else {
+        toast({
+          title: "Ungültiger Code",
+          description: data.error || "Der eingegebene Code ist ungültig oder abgelaufen.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Anmeldung fehlgeschlagen:", error)
+      toast({
+        title: "Fehler",
+        description: "Die Anmeldung ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -87,64 +188,72 @@ export default function SignIn() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Anmelden</CardTitle>
-          <CardDescription>Melden Sie sich an, um auf Ihr Dashboard zuzugreifen</CardDescription>
+          <CardDescription>
+            {!otpSent 
+              ? "Melden Sie sich an, um auf Ihr Dashboard zuzugreifen"
+              : `Wir haben einen Code an ${email} gesendet`
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {!otpSent ? (
             <form onSubmit={handleRequestOtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="identifierType">Anmelden mit</Label>
-                <Select value={identifierType} onValueChange={(value: "email" | "phone") => setIdentifierType(value)}>
-                  <SelectTrigger id="identifierType">
-                    <SelectValue placeholder="Anmeldemethode wählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="email">E-Mail</SelectItem>
-                    <SelectItem value="phone">Telefonnummer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="identifier">{identifierType === "email" ? "E-Mail-Adresse" : "Telefonnummer"}</Label>
+                <Label htmlFor="email">E-Mail-Adresse</Label>
                 <Input
-                  id="identifier"
-                  type={identifierType === "email" ? "email" : "tel"}
-                  placeholder={
-                    identifierType === "email" ? "ihre@email.de" : "+49 123 456789"
-                  }
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  id="email"
+                  type="email"
+                  placeholder="ihre@email.de"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
 
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <span>Ein Verifizierungscode wird an Ihre E-Mail-Adresse gesendet.</span>
+              </div>
+
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Wird gesendet..." : "OTP anfordern"}
+                {isLoading ? "Wird gesendet..." : "Code anfordern"}
               </Button>
             </form>
           ) : (
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="otp" className="block text-sm font-medium">
-                  Einmalpasswort (OTP)
+                  Verifizierungscode
                 </Label>
                 <Input
                   id="otp"
                   type="text"
-                  placeholder="OTP eingeben"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="6-stelliger Code"
+                  className="text-center text-xl tracking-widest"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
                 {isLoading ? "Wird angemeldet..." : "Anmelden"}
               </Button>
-              <div className="text-center">
-                <Button variant="link" onClick={() => setOtpSent(false)} type="button">
-                  {identifierType === "email" ? "E-Mail" : "Nummer"} ändern
+              <div className="flex items-center justify-between pt-2">
+                <Button variant="link" onClick={() => setOtpSent(false)} type="button" className="px-0">
+                  E-Mail ändern
                 </Button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading}
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Code erneut senden
+                </button>
               </div>
             </form>
           )}
