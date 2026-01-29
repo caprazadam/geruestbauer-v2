@@ -1,0 +1,53 @@
+## Error Type
+Recoverable Error
+
+## Error Message
+Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <body className="__classNam..." suppressHydrationWarning={true}>
+      <JsonLdScripts>
+      <ClientLayout>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            <J attribute="class" defaultTheme="light" enableSystem={false}>
+              <V attribute="class" defaultTheme="light" enableSystem={false}>
+                <script>
+                <Header>
+                  <header className="sticky top...">
+                    <div className="container ...">
+                      <LinkComponent href="/" className="font-bold ...">
+                        <a className="font-bold ..." ref={function} onClick={function onClick} ...>
+                          <Building2>
++                         Gerüstbauer24
+-                         <font dir="auto" style={{vertical-align:"inherit"}}>
+                      ...
+                ...
+
+
+
+    at a (<anonymous>:null:null)
+    at Header (components/header.tsx:31:9)
+    at ClientLayout (app/client-layout.tsx:22:26)
+    at RootLayout (app/layout.tsx:26:9)
+
+## Code Frame
+  29 |     >
+  30 |       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+> 31 |         <Link href="/" className="font-bold text-xl md:text-2xl flex items-center gap-2">
+     |         ^
+  32 |           <Building2 className="h-6 w-6 text-blue-600" />
+  33 |           Gerüstbauer24
+  34 |         </Link>
+
+Next.js version: 15.5.9 (Webpack)
