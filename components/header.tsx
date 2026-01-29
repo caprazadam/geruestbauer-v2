@@ -30,7 +30,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="font-bold text-xl md:text-2xl flex items-center gap-2">
           <Building2 className="h-6 w-6 text-blue-600" />
-          Gerüstbauer-Verzeichnis
+          Gerüstbauer24
         </Link>
 
         {/* Desktop Navigation */}
