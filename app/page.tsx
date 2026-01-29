@@ -4,6 +4,16 @@ import { SearchBar } from "@/components/search-bar"
 import { FeaturedCompanies } from "@/components/featured-companies"
 import Link from "next/link"
 import { Shield, Clock, Award } from "lucide-react"
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Gerüstbauer24 - Gerüstbaufirmen in Deutschland finden',
+  description: 'Finden Sie zuverlässige Gerüstbauer in Ihrer Nähe. Geprüfte Unternehmen, echte Bewertungen und schnelle Anfragen für Fassadengerüste, Baugerüste und mehr.',
+  keywords: ['Gerüstbau', 'Gerüstbauer', 'Gerüstbaufirma', 'Deutschland', 'Fassadengerüst', 'Baugerüst'],
+  alternates: {
+    canonical: 'https://geruestbauer24.de',
+  },
+}
 
 export default function Home() {
   return (

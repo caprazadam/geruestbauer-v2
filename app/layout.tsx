@@ -1,36 +1,42 @@
-"use client"
-
-import type React from "react"
+import type { Metadata } from 'next'
 import { Inter } from "next/font/google"
-import { Toaster } from "@/components/ui/toaster"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/components/auth-provider"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
-import { usePathname } from "next/navigation"
+import { defaultMetadata, generateOrganizationSchema, generateWebsiteSchema } from './metadata'
+import ClientLayout from './client-layout'
 import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const metadata: Metadata = defaultMetadata
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname()
-  const isAdminPage = pathname?.startsWith("/admin")
+  const organizationSchema = generateOrganizationSchema()
+  const websiteSchema = generateWebsiteSchema()
 
   return (
     <html lang="de">
+      <head>
+        <link rel="canonical" href="https://geruestbauer24.de" />
+        <meta name="geo.region" content="DE" />
+        <meta name="geo.placename" content="Deutschland" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema)
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema)
+          }}
+        />
+      </head>
       <body className={`${inter.className} bg-gray-200 text-black min-h-screen flex flex-col`}>
-        <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-            {!isAdminPage && <Header />}
-            <main className="flex-grow">{children}</main>
-            {!isAdminPage && <Footer />}
-            <Toaster />
-          </ThemeProvider>
-        </AuthProvider>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   )
