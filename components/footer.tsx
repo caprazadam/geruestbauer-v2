@@ -31,11 +31,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/companies/create" className="hover:underline">
-                  Firma eintragen
-                </Link>
-              </li>
-              <li>
                 <Link href="/agb" className="hover:underline">
                   AGB
                 </Link>

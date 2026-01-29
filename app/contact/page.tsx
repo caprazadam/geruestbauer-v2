@@ -42,7 +42,7 @@ export default function ContactPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="message">Nachricht</Label>
-                <Textarea id="message" placeholder="Ihre Nachricht" rows={5} />
+                <Textarea id="message" placeholder="Bitte beschreiben Sie Ihr Anliegen" rows={5} />
               </div>
             </CardContent>
             <CardFooter>
@@ -64,7 +64,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium">Telefon</h3>
-                  <p className="text-gray-600">+49 (0) 123 4567890</p>
+                  <p className="text-gray-600">+49 1639540595</p>
                 </div>
               </div>
 
@@ -74,7 +74,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium">E-Mail</h3>
-                  <p className="text-gray-600">support@geruestbauer-verzeichnis.de</p>
+                  <p className="text-gray-600">info@geruestbauer24.eu</p>
                 </div>
               </div>
 
