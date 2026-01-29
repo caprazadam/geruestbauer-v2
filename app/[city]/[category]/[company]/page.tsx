@@ -21,25 +21,26 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import { getCompanyBySlug } from "@/lib/company-data"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import type { Company } from "@/lib/company-data"
 
 type Props = {
-  params: {
+  params: Promise<{
     city: string
     category: string
     company: string
-  }
+  }>
 }
 
 export default function CompanyDetailPage({ params }: Props) {
+  const resolvedParams = use(params)
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadCompany = () => {
-      console.log("[v0] Looking for company with slugs:", params)
-      const foundCompany = getCompanyBySlug(params.city, params.category, params.company)
+      console.log("[v0] Looking for company with slugs:", resolvedParams)
+      const foundCompany = getCompanyBySlug(resolvedParams.city, resolvedParams.category, resolvedParams.company)
       console.log("[v0] Found company:", foundCompany ? foundCompany.name : "NOT FOUND")
 
       setCompany(foundCompany || null)
@@ -47,7 +48,7 @@ export default function CompanyDetailPage({ params }: Props) {
     }
 
     loadCompany()
-  }, [params])
+  }, [resolvedParams])
 
   if (loading) {
     return (
