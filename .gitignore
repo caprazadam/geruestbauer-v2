@@ -4,3 +4,4 @@ node_modules
 .env.local
 .replit
 npm-debug.log
+.env.local
