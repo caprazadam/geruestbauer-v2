@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Database, Search, CheckCircle2, AlertCircle, Loader2, MapPin } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Database, Search, CheckCircle2, AlertCircle, Loader2, MapPin, Star, Globe } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { generateSlug, generateCompanyId } from "@/lib/slug-utils"
 import { addMultipleCompaniesToStorage } from "@/lib/company-storage"
@@ -20,6 +21,7 @@ export default function ScraperPage() {
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any[]>([])
   const [savedCount, setSavedCount] = useState(0)
+  const [searchMode, setSearchMode] = useState<"google" | "osm">("google")
 
   const germanCities = [
     "München",
@@ -39,7 +41,7 @@ export default function ScraperPage() {
     "Duisburg",
   ]
 
-  const handleScrape = async () => {
+  const handleGoogleScrape = async () => {
     if (!city.trim()) {
       toast({
         title: "Fehler",
@@ -55,7 +57,79 @@ export default function ScraperPage() {
 
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 Sekunden
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+      const response = await fetch("/api/scraper/google-places", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          query: "Gerüstbau",
+          city: city.trim() 
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Fehler beim Abrufen der Daten")
+      }
+
+      console.log("[v0] Google Places Data received:", data)
+
+      if (data.companies && data.companies.length > 0) {
+        setResults(data.companies)
+        toast({
+          title: "Erfolg",
+          description: `${data.count} Firmen mit echten Google-Bewertungen gefunden`,
+        })
+      } else {
+        toast({
+          title: "Keine Ergebnisse",
+          description: "Keine Gerüstbau-Firmen in dieser Stadt gefunden",
+        })
+      }
+    } catch (error: any) {
+      console.error("[v0] Google Scraper error:", error)
+
+      let errorMessage = "Ein Fehler ist aufgetreten"
+      if (error.name === "AbortError") {
+        errorMessage = "Die Anfrage hat zu lange gedauert. Bitte versuchen Sie eine kleinere Stadt."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      toast({
+        title: "Fehler",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOsmScrape = async () => {
+    if (!city.trim()) {
+      toast({
+        title: "Fehler",
+        description: "Bitte geben Sie eine Stadt ein",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setLoading(true)
+    setResults([])
+    setSavedCount(0)
+
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
 
       const response = await fetch("/api/scraper/osm", {
         method: "POST",
@@ -80,7 +154,7 @@ export default function ScraperPage() {
         setResults(data.companies)
         toast({
           title: "Erfolg",
-          description: `${data.count} Firmen gefunden`,
+          description: `${data.count} Firmen gefunden (ohne Bewertungen)`,
         })
       } else {
         toast({
@@ -89,7 +163,7 @@ export default function ScraperPage() {
         })
       }
     } catch (error: any) {
-      console.error("[v0] Scraper error:", error)
+      console.error("[v0] OSM Scraper error:", error)
 
       let errorMessage = "Ein Fehler ist aufgetreten"
       if (error.name === "AbortError") {
@@ -105,6 +179,14 @@ export default function ScraperPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleScrape = () => {
+    if (searchMode === "google") {
+      handleGoogleScrape()
+    } else {
+      handleOsmScrape()
     }
   }
 
@@ -125,6 +207,8 @@ export default function ScraperPage() {
         const slug = generateSlug(companyName)
         const citySlug = generateSlug(cityName)
 
+        const hasRealRating = result.rating !== null && result.rating !== undefined
+
         return {
           id: generateCompanyId(),
           name: companyName,
@@ -133,10 +217,10 @@ export default function ScraperPage() {
           citySlug: citySlug,
           category: "Gerüstbau",
           categorySlug: "geruestbau",
-          location: `${cityName}${result.postcode ? `, ${result.postcode}` : ""}`,
+          location: result.address || `${cityName}`,
           employees: result.employees || 0,
-          rating: Number((Math.random() * 1 + 4).toFixed(1)),
-          reviewCount: Math.floor(Math.random() * 100) + 10,
+          rating: hasRealRating ? Number(result.rating) : 0,
+          reviewCount: result.reviewCount || 0,
           imageUrl: `/professional-scaffolding-berlin.jpg`,
           services: ["fassadengerust", "arbeitsgerust", "schutzgerust"],
           certifications: ["ISO 9001", "TÜV"],
@@ -144,9 +228,10 @@ export default function ScraperPage() {
           phone: result.phone || "",
           email: result.email || "",
           website: result.website || "",
-          address: result.address !== "Keine Adresse" ? result.address : "",
+          address: result.address || "",
           founded: new Date().getFullYear() - Math.floor(Math.random() * 30),
           specialties: ["Fassadengerüst", "Arbeitsgerüst", "Schutzgerüst"],
+          googlePlaceId: result.placeId || "",
         }
       })
 
@@ -175,21 +260,50 @@ export default function ScraperPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">OSM Firmen-Scraper</h1>
-          <p className="text-slate-600 mt-1">Importieren Sie Gerüstbau-Firmen aus OpenStreetMap</p>
+          <h1 className="text-3xl font-bold text-slate-900">Firmen-Scraper</h1>
+          <p className="text-slate-600 mt-1">Importieren Sie Gerüstbau-Firmen mit echten Google-Bewertungen</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Database className="h-5 w-5" />
-              Stadt durchsuchen
+              Datenquelle wählen
             </CardTitle>
             <CardDescription>
-              Geben Sie eine deutsche Stadt ein, um Gerüstbau-Firmen aus OpenStreetMap zu laden
+              Wählen Sie die Quelle für Firmendaten
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            <Tabs value={searchMode} onValueChange={(v) => setSearchMode(v as "google" | "osm")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="google" className="flex items-center gap-2">
+                  <Star className="h-4 w-4" />
+                  Google Places (Empfohlen)
+                </TabsTrigger>
+                <TabsTrigger value="osm" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  OpenStreetMap
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="google" className="mt-4">
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    <strong>Google Places API:</strong> Liefert echte Google-Bewertungen, Telefonnummern, Websites und aktuelle Öffnungszeiten.
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="osm" className="mt-4">
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800">
+                    <strong>OpenStreetMap:</strong> Kostenlos, aber ohne Bewertungen. Enthält nur Basisinformationen wie Name und Adresse.
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
+
             <div className="space-y-2">
               <Label htmlFor="city">Stadt</Label>
               <div className="flex gap-3">
@@ -218,7 +332,6 @@ export default function ScraperPage() {
               </div>
             </div>
 
-            {/* Schnellauswahl */}
             <div className="space-y-2">
               <Label>Schnellauswahl</Label>
               <div className="flex flex-wrap gap-2">
@@ -237,7 +350,6 @@ export default function ScraperPage() {
               </div>
             </div>
 
-            {/* Ergebnisse */}
             {results.length > 0 && (
               <div className="space-y-4 border-t pt-6">
                 <div className="flex items-center justify-between">
@@ -268,15 +380,18 @@ export default function ScraperPage() {
                     >
                       <div className="flex-1 space-y-1">
                         <p className="font-medium text-slate-900">{company.name}</p>
-                        {company.address && company.address !== "Keine Adresse" && (
+                        {company.address && (
                           <p className="text-sm text-slate-600">
                             📍 {company.address}
-                            {company.postcode && `, ${company.postcode}`} {company.city}
+                          </p>
+                        )}
+                        {company.rating !== null && company.rating !== undefined && (
+                          <p className="text-sm text-amber-600 font-medium">
+                            ⭐ {company.rating.toFixed(1)} ({company.reviewCount} Bewertungen)
                           </p>
                         )}
                         {company.phone && <p className="text-sm text-slate-700">📞 {company.phone}</p>}
                         {company.website && <p className="text-sm text-blue-600">🌐 {company.website}</p>}
-                        {company.email && <p className="text-sm text-slate-600">✉️ {company.email}</p>}
                       </div>
                       <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0 ml-2" />
                     </div>
@@ -285,7 +400,6 @@ export default function ScraperPage() {
               </div>
             )}
 
-            {/* Keine Ergebnisse */}
             {!loading && results.length === 0 && city && (
               <div className="flex flex-col items-center justify-center py-12 text-center border-t">
                 <AlertCircle className="h-12 w-12 text-slate-400 mb-3" />
@@ -296,15 +410,14 @@ export default function ScraperPage() {
           </CardContent>
         </Card>
 
-        {/* Info-Box */}
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="text-blue-900">Hinweise zur Verwendung</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-blue-800">
-            <p>• Die Daten werden von OpenStreetMap (OSM) über die Overpass API abgerufen</p>
+            <p>• <strong>Google Places:</strong> Liefert echte Bewertungen, erfordert API-Schlüssel</p>
+            <p>• <strong>OpenStreetMap:</strong> Kostenlos, aber ohne Bewertungsdaten</p>
             <p>• Gespeicherte Firmen erscheinen automatisch auf der Website</p>
-            <p>• Slugs werden automatisch mit Umlaut-Konvertierung erstellt (ä→ae, ö→oe, ü→ue, ß→ss)</p>
             <p>• Die neuesten 9 Firmen werden auf der Startseite angezeigt</p>
           </CardContent>
         </Card>
