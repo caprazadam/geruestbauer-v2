@@ -19,6 +19,7 @@ import {
   Search,
   Globe,
   BarChart3,
+  FileText,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -72,6 +73,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       title: "Scraper",
       icon: Database,
       href: "/admin/scraper",
+    },
+    {
+      title: "Blog",
+      icon: FileText,
+      href: "/admin/blog",
     },
     {
       title: "Statistiken",
