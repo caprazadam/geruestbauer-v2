@@ -42,6 +42,8 @@ import {
   Eye,
   FileText,
   Search,
+  Image as ImageIcon,
+  Link as LinkIcon,
 } from "lucide-react";
 
 export default function AdminBlogPage() {
@@ -294,14 +296,75 @@ export default function AdminBlogPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Bild-URL</Label>
-                  <Input
-                    id="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    className="bg-slate-900 border-slate-700"
-                  />
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Beitragsbild
+                  </Label>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="imageUrl" className="text-sm text-slate-400">
+                          <LinkIcon className="h-3 w-3 inline mr-1" />
+                          Bild-URL eingeben
+                        </Label>
+                        <Input
+                          id="imageUrl"
+                          value={formData.imageUrl}
+                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                          placeholder="https://example.com/bild.jpg"
+                          className="bg-slate-900 border-slate-700"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label className="text-sm text-slate-400">Schnellauswahl (Beispielbilder)</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Gerüst", url: "/placeholder.svg?height=400&width=600&query=scaffolding+construction" },
+                            { label: "Sicherheit", url: "/placeholder.svg?height=400&width=600&query=scaffolding+safety+helmet" },
+                            { label: "Fassade", url: "/placeholder.svg?height=400&width=600&query=facade+scaffolding+building" },
+                            { label: "Arbeiter", url: "/placeholder.svg?height=400&width=600&query=construction+worker+scaffolding" },
+                          ].map((img) => (
+                            <Button
+                              key={img.label}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setFormData({ ...formData, imageUrl: img.url })}
+                              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                            >
+                              {img.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-sm text-slate-400">Vorschau</Label>
+                      <div className="relative aspect-video bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                        {formData.imageUrl ? (
+                          <img
+                            src={formData.imageUrl}
+                            alt="Vorschau"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder.svg?height=400&width=600&query=image+not+found";
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-slate-500">
+                            <div className="text-center">
+                              <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                              <p className="text-sm">Kein Bild ausgewählt</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -371,6 +434,7 @@ export default function AdminBlogPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-700">
+                  <TableHead className="text-slate-400 w-16">Bild</TableHead>
                   <TableHead className="text-slate-400">Titel</TableHead>
                   <TableHead className="text-slate-400">Kategorie</TableHead>
                   <TableHead className="text-slate-400">Autor</TableHead>
@@ -382,6 +446,18 @@ export default function AdminBlogPage() {
               <TableBody>
                 {filteredPosts.map((post) => (
                   <TableRow key={post.id} className="border-slate-700">
+                    <TableCell>
+                      <div className="w-12 h-8 rounded overflow-hidden bg-slate-700">
+                        <img
+                          src={post.imageUrl}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder.svg?height=32&width=48&query=blog";
+                          }}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium text-white">
                       {post.title}
                     </TableCell>
