@@ -31,3 +31,4 @@ Continue building your app on:
 # geruestbauer
 # geruestbauer24eu
 # Updated
+# Deploy to EU
