@@ -5,3 +5,4 @@ node_modules
 .replit
 npm-debug.log
 .env.local
+.vercel
