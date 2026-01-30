@@ -34,19 +34,41 @@ export default function AdminLoginPage() {
     // Simuliere Login-Verzögerung
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    // Test-Credentials
+    // Lese gespeicherte Admin-Daten aus localStorage oder verwende Standard-Credentials
+    const storedAdmin = localStorage.getItem("adminUser");
+    let adminData = {
+      username: "admin",
+      password: "admin123",
+      name: "Administrator",
+      role: "admin",
+      id: "admin-1"
+    };
+
+    if (storedAdmin) {
+      try {
+        const parsed = JSON.parse(storedAdmin);
+        if (parsed.password) {
+          adminData = { ...adminData, ...parsed };
+        }
+      } catch (e) {
+        console.error("Error parsing admin data:", e);
+      }
+    }
+
+    // Überprüfe Credentials
     if (
-      credentials.username === "admin" &&
-      credentials.password === "admin123"
+      credentials.username === adminData.username &&
+      credentials.password === adminData.password
     ) {
-      // Speichere Admin-Session
+      // Speichere Admin-Session mit aktuellem Passwort
       localStorage.setItem(
         "adminUser",
         JSON.stringify({
-          id: "admin-1",
-          username: "admin",
-          role: "admin",
-          name: "Administrator",
+          id: adminData.id,
+          username: adminData.username,
+          password: adminData.password,
+          role: adminData.role,
+          name: adminData.name,
         }),
       );
       router.push("/admin/dashboard");
