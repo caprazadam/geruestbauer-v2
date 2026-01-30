@@ -33,3 +33,4 @@ Continue building your app on:
 # Updated
 # Deploy to EU
 # Deploy to EU
+# EU deployment
