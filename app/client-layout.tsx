@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import DynamicSeo from "@/components/dynamic-seo"
 import { usePathname } from "next/navigation"
 
 export default function ClientLayout({
@@ -19,6 +20,7 @@ export default function ClientLayout({
   return (
     <AuthProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <DynamicSeo />
         {!isAdminPage && <Header />}
         <main className="flex-grow">{children}</main>
         {!isAdminPage && <Footer />}
