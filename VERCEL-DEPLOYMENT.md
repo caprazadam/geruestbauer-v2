@@ -56,7 +56,7 @@ Vercel proje ayarlarında şu değişkenleri ekleyin:
 |----------|-------|----------|
 | `RESEND_API_KEY` | `re_xxxxx...` | Resend API anahtarınız |
 | `FROM_EMAIL` | `noreply@yourdomain.com` | Gönderici e-posta adresi |
-| `NEXT_PUBLIC_SITE_URL` | `https://gerustbauer24.de` | Site URL'i |
+| `NEXT_PUBLIC_SITE_URL` | `https://geruestbauer24.eu` | Site URL'i |
 
 ### Adım 4: Deploy
 1. "Deploy" butonuna tıklayın
@@ -67,7 +67,7 @@ Vercel proje ayarlarında şu değişkenleri ekleyin:
 
 ### DNS Ayarları
 1. Vercel'de "Settings" > "Domains" gidin
-2. `gerustbauer24.de` ekleyin
+2. `geruestbauer24.eu` ekleyin
 3. DNS sağlayıcınızda şu kayıtları ekleyin:
 
 ```
@@ -88,7 +88,7 @@ Vercel otomatik olarak SSL sertifikası sağlar.
 ### Domain Doğrulama
 1. https://resend.com adresine gidin
 2. "Domains" > "Add Domain" tıklayın
-3. `gerustbauer24.de` ekleyin
+3. `geruestbauer24.eu` ekleyin
 4. DNS kayıtlarını ekleyin:
 
 ```
@@ -168,4 +168,4 @@ Vercel otomatik olarak yeni deployment başlatacaktır.
 
 ---
 
-**Destek:** Sorularınız için support@gerustbauer24.de adresine yazabilirsiniz.
+**Destek:** Sorularınız için support@geruestbauer24.eu adresine yazabilirsiniz.

@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   description: 'Durchsuchen Sie unser Verzeichnis geprüfter Gerüstbaufirmen. Finden Sie Fassadengerüst, Baugerüst und Gerüstverleih in Ihrer Stadt.',
   keywords: ['Gerüstbaufirmen', 'Gerüstbauer Verzeichnis', 'Fassadengerüst', 'Baugerüst', 'Gerüstverleih'],
   alternates: {
-    canonical: 'https://geruestbauer24.de/companies',
+    canonical: 'https://geruestbauer24.eu/companies',
   },
 }
 

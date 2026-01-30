@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'Finden Sie zuverlässige Gerüstbauer in Ihrer Nähe. Geprüfte Unternehmen, echte Bewertungen und schnelle Anfragen für Fassadengerüste, Baugerüste und mehr.',
   keywords: ['Gerüstbau', 'Gerüstbauer', 'Gerüstbaufirma', 'Deutschland', 'Fassadengerüst', 'Baugerüst'],
   alternates: {
-    canonical: 'https://geruestbauer24.de',
+    canonical: 'https://geruestbauer24.eu',
   },
 }
 

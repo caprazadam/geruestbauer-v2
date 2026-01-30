@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: 'Kontakt | Gerüstbauer24',
   description: 'Kontaktieren Sie uns für Fragen zu unserem Gerüstbau-Verzeichnis. Wir helfen Ihnen gerne weiter.',
   alternates: {
-    canonical: 'https://geruestbauer24.de/contact',
+    canonical: 'https://geruestbauer24.eu/contact',
   },
 }
 

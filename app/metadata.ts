@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const siteConfig = {
   name: 'Gerüstbauer24',
   description: 'Das führende Verzeichnis für Gerüstbaufirmen in Deutschland. Finden Sie zuverlässige Gerüstbauer in Ihrer Nähe für Fassadengerüste, Baugerüste und mehr.',
-  url: 'https://geruestbauer24.de',
+  url: 'https://geruestbauer24.eu',
   ogImage: '/professional-scaffolding-berlin.jpg',
   keywords: [
     'Gerüstbau',

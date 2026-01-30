@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: 'Über uns | Gerüstbauer24',
   description: 'Erfahren Sie mehr über Gerüstbauer24 - Das führende Verzeichnis für Gerüstbaufirmen in Deutschland.',
   alternates: {
-    canonical: 'https://geruestbauer24.de/about',
+    canonical: 'https://geruestbauer24.eu/about',
   },
 }
 

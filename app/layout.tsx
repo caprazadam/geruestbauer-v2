@@ -17,7 +17,7 @@ export default function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <head>
-        <link rel="canonical" href="https://geruestbauer24.de" />
+        <link rel="canonical" href="https://geruestbauer24.eu" />
         <meta name="geo.region" content="DE" />
         <meta name="geo.placename" content="Deutschland" />
       </head>
