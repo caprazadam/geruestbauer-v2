@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { blogPosts, blogCategories } from "@/lib/blog-data";
+import { blogPosts as initialBlogPosts, blogCategories, BlogPost } from "@/lib/blog-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,18 @@ import { Calendar, User, ArrowRight, Search, FileText } from "lucide-react";
 export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const savedPosts = localStorage.getItem("blogPosts");
+    if (savedPosts) {
+      setBlogPosts(JSON.parse(savedPosts));
+    } else {
+      setBlogPosts(initialBlogPosts);
+    }
+    setIsLoaded(true);
+  }, []);
 
   const filteredPosts = blogPosts.filter((post) => {
     if (!post.isPublished) return false;
@@ -25,6 +36,16 @@ export default function BlogPage() {
     
     return matchesSearch && matchesCategory;
   });
+
+  if (!isLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -67,12 +88,13 @@ export default function BlogPage() {
                 <Card key={post.id} className="overflow-hidden bg-white border-slate-100 hover:shadow-lg transition-shadow">
                   <div className="flex flex-col md:flex-row">
                     <div className="md:w-1/3 relative h-48 md:h-auto bg-slate-100">
-                      <Image
+                      <img
                         src={post.imageUrl}
                         alt={post.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="w-full h-full object-cover absolute inset-0"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg?height=400&width=600&query=blog+article";
+                        }}
                       />
                     </div>
                     <div className="md:w-2/3">

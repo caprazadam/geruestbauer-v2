@@ -1,10 +1,9 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import { blogPosts } from "@/lib/blog-data";
+import { blogPosts as initialBlogPosts, BlogPost } from "@/lib/blog-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +16,28 @@ interface BlogPostPageProps {
 
 export default function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = use(params);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    const savedPosts = localStorage.getItem("blogPosts");
+    if (savedPosts) {
+      setBlogPosts(JSON.parse(savedPosts));
+    } else {
+      setBlogPosts(initialBlogPosts);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  if (!isLoaded) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+        </div>
+      </div>
+    );
+  }
   
   const post = blogPosts.find((p) => p.slug === slug && p.isPublished);
   
@@ -43,13 +64,13 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         <div className="lg:w-3/4">
           <Card className="overflow-hidden bg-white border-slate-100">
             <div className="relative h-64 md:h-96 bg-slate-100">
-              <Image
+              <img
                 src={post.imageUrl}
                 alt={post.title}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/placeholder.svg?height=400&width=600&query=blog+article";
+                }}
               />
             </div>
             <CardContent className="p-6 md:p-8">
