@@ -1,0 +1,54 @@
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+2company-storage.ts:126 [Supabase] Loaded companies - rows returned: 5 | Total count: 5
+hot-reloader-app.js:197 [Fast Refresh] rebuilding
+report-hmr-latency.js:14 [Fast Refresh] done in 1479ms
+company-storage.ts:126 [Supabase] Loaded companies - rows returned: 5 | Total count: 5
+page.tsx:47 [Admin Companies] Loaded companies count: 5
+company-storage.ts:126 [Supabase] Loaded companies - rows returned: 5 | Total count: 5
+page.tsx:47 [Admin Companies] Loaded companies count: 5
+hot-reloader-app.js:197 [Fast Refresh] rebuilding
+report-hmr-latency.js:14 [Fast Refresh] done in 3904ms
+hot-reloader-app.js:197 [Fast Refresh] rebuilding
+report-hmr-latency.js:14 [Fast Refresh] done in 1237ms
+page.tsx:82 [v0] Google Places Data received: Object
+company-storage.ts:92 [Supabase] Saving 17 companies...
+company-storage.ts:94 [Supabase] First company data: {
+  "id": "company-1769867816403-bj4lwqb51",
+  "name": "A Plus Gerüstbau GmbH",
+  "slug": "a-plus-geruestbau-gmbh",
+  "city": "Duisburg",
+  "city_slug": "duisburg",
+  "category": "Gerüstbau",
+  "category_slug": "geruestbau",
+  "location": "Droste-Hülshoff-Straße 10, 47166 Duisburg, Deutschland",
+  "employees": 0,
+  "rating": 5,
+  "review_count": 36,
+  "image_url": "/professional-scaffolding-berlin.jpg",
+  "services": [
+    "fassadengerust",
+    "arbeitsgerust",
+    "schutzgerust"
+  ],
+  "certifications": [
+    "ISO 9001",
+    "TÜV"
+  ],
+  "description": "A Plus Gerüstbau GmbH ist Ihr zuverlässiger Partner für professionellen Gerüstbau in Duisburg. Wir bieten umfassende Leistungen von Fassadengerüsten bis zu Spezialgerüsten. Kontaktieren Sie uns für eine individuelle Beratung.",
+  "phone": "0160 6306479",
+  "email": null,
+  "website": "https://aplus-geruestbau.de/",
+  "address": "Droste-Hülshoff-Straße 10, 47166 Duisburg, Deutschland",
+  "founded": 1999,
+  "specialties": [
+    "Fassadengerüst",
+    "Arbeitsgerüst",
+    "Schutzgerüst"
+  ],
+  "google_place_id": "ChIJiU40q4u_uEcRre8RbYXrqtE"
+}
+company-storage.ts:106 [Supabase] Successfully saved 17 companies
+company-storage.ts:126 [Supabase] Loaded companies - rows returned: 22 | Total count: 22
+page.tsx:47 [Admin Companies] Loaded companies count: 22
+company-storage.ts:126 [Supabase] Loaded companies - rows returned: 22 | Total count: 22
+page.tsx:47 [Admin Companies] Loaded companies count: 22

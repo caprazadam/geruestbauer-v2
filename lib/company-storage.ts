@@ -61,20 +61,15 @@ export async function saveCompanyToSupabase(company: Company): Promise<boolean> 
   }
   
   try {
-    console.log('[Supabase] Saving single company:', company.name)
     const dbCompany = companyToDb(company)
-    
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('companies')
       .upsert(dbCompany, { onConflict: 'id' })
-      .select()
     
     if (error) {
-      console.error('[Supabase] Error saving company:', error.message, error.details, error.hint)
+      console.error('[Supabase] Error saving company:', error.message)
       return false
     }
-    
-    console.log('[Supabase] Company saved successfully:', data?.[0]?.name)
     return true
   } catch (e) {
     console.error('[Supabase] Exception saving company:', e)
@@ -89,21 +84,15 @@ export async function saveMultipleCompaniesToSupabase(companies: Company[]): Pro
   }
   
   try {
-    console.log('[Supabase] Saving', companies.length, 'companies...')
     const dbCompanies = companies.map(companyToDb)
-    console.log('[Supabase] First company data:', JSON.stringify(dbCompanies[0], null, 2))
-    
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('companies')
       .upsert(dbCompanies, { onConflict: 'id' })
-      .select()
     
     if (error) {
-      console.error('[Supabase] Error saving companies:', error.message, error.details, error.hint)
+      console.error('[Supabase] Error saving companies:', error.message)
       return false
     }
-    
-    console.log('[Supabase] Successfully saved', data?.length || 0, 'companies')
     return true
   } catch (e) {
     console.error('[Supabase] Exception saving companies:', e)
@@ -118,12 +107,10 @@ export async function loadCompaniesFromSupabase(): Promise<Company[]> {
   }
   
   try {
-    const { data, error, count } = await supabase
+    const { data, error } = await supabase
       .from('companies')
-      .select('*', { count: 'exact' })
+      .select('*')
       .order('created_at', { ascending: false })
-    
-    console.log('[Supabase] Loaded companies - rows returned:', data?.length, '| Total count:', count)
     
     if (error) {
       console.error('[Supabase] Error loading companies:', error)
