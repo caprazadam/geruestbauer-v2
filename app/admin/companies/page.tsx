@@ -15,6 +15,7 @@ import { toast } from "sonner"
 import { parseCompanyCSV, transformCSVToCompany } from "@/lib/csv-parser"
 import { 
   loadCompaniesFromSupabase, 
+  saveCompanyToSupabase,
   saveMultipleCompaniesToSupabase, 
   deleteCompanyFromSupabase,
   updateCompanyInSupabase
@@ -39,6 +40,16 @@ export default function AdminCompaniesPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editData, setEditData] = useState<Partial<Company>>({})
   const [currentPage, setCurrentPage] = useState(1)
+  const [isAddOpen, setIsAddOpen] = useState(false)
+  const [newCompany, setNewCompany] = useState({
+    name: "",
+    city: "",
+    phone: "",
+    email: "",
+    website: "",
+    address: "",
+    description: ""
+  })
 
   const loadCompanies = async () => {
     setIsLoading(true)
@@ -112,6 +123,50 @@ export default function AdminCompaniesPage() {
     }
   }
 
+  const handleAddCompany = async () => {
+    if (!newCompany.name || !newCompany.city) {
+      toast.error("Name und Stadt sind Pflichtfelder")
+      return
+    }
+    
+    const slug = newCompany.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const citySlug = newCompany.city.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    
+    const company: Company = {
+      id: `company-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: newCompany.name,
+      slug,
+      city: newCompany.city,
+      citySlug,
+      category: "Gerüstbau",
+      categorySlug: "geruestbau",
+      location: newCompany.address || newCompany.city,
+      employees: 0,
+      rating: 0,
+      reviewCount: 0,
+      imageUrl: "/professional-scaffolding-berlin.jpg",
+      services: ["fassadengerust", "arbeitsgerust", "schutzgerust"],
+      certifications: ["ISO 9001"],
+      description: newCompany.description || `${newCompany.name} ist Ihr zuverlässiger Partner für professionellen Gerüstbau in ${newCompany.city}.`,
+      phone: newCompany.phone || "",
+      email: newCompany.email || "",
+      website: newCompany.website || "",
+      address: newCompany.address || "",
+      founded: new Date().getFullYear(),
+      specialties: ["Fassadengerüst", "Arbeitsgerüst", "Schutzgerüst"]
+    }
+    
+    const success = await saveCompanyToSupabase(company)
+    if (success) {
+      await loadCompanies()
+      setIsAddOpen(false)
+      setNewCompany({ name: "", city: "", phone: "", email: "", website: "", address: "", description: "" })
+      toast.success("Firma erfolgreich hinzugefügt")
+    } else {
+      toast.error("Fehler beim Hinzufügen der Firma")
+    }
+  }
+
   const filteredCompanies = companies.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.city?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -150,7 +205,7 @@ export default function AdminCompaniesPage() {
                 {isUploading ? "Importieren..." : "CSV Import"}
               </Button>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsAddOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Neue Firma
             </Button>
@@ -435,6 +490,85 @@ export default function AdminCompaniesPage() {
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setIsEditOpen(false)}>Abbrechen</Button>
             <Button onClick={handleEditSave} className="bg-blue-600 hover:bg-blue-700">Speichern</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Neue Firma hinzufügen</DialogTitle>
+            <DialogDescription>Geben Sie die Firmendaten ein</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-name">Name *</Label>
+              <Input 
+                id="new-name" 
+                placeholder="Firma GmbH"
+                value={newCompany.name} 
+                onChange={(e) => setNewCompany({...newCompany, name: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-city">Stadt *</Label>
+              <Input 
+                id="new-city" 
+                placeholder="Berlin"
+                value={newCompany.city} 
+                onChange={(e) => setNewCompany({...newCompany, city: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-address">Adresse</Label>
+              <Input 
+                id="new-address" 
+                placeholder="Musterstraße 123, 12345 Berlin"
+                value={newCompany.address} 
+                onChange={(e) => setNewCompany({...newCompany, address: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-phone">Telefon</Label>
+              <Input 
+                id="new-phone" 
+                placeholder="030 1234567"
+                value={newCompany.phone} 
+                onChange={(e) => setNewCompany({...newCompany, phone: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-email">E-Mail</Label>
+              <Input 
+                id="new-email" 
+                type="email"
+                placeholder="info@firma.de"
+                value={newCompany.email} 
+                onChange={(e) => setNewCompany({...newCompany, email: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-website">Webseite</Label>
+              <Input 
+                id="new-website" 
+                placeholder="https://www.firma.de"
+                value={newCompany.website} 
+                onChange={(e) => setNewCompany({...newCompany, website: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-description">Beschreibung</Label>
+              <Input 
+                id="new-description" 
+                placeholder="Kurze Beschreibung der Firma..."
+                value={newCompany.description} 
+                onChange={(e) => setNewCompany({...newCompany, description: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleAddCompany} className="bg-blue-600 hover:bg-blue-700">Firma hinzufügen</Button>
           </div>
         </DialogContent>
       </Dialog>
