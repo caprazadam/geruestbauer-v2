@@ -1,9 +1,9 @@
 import { MetadataRoute } from 'next'
 import { siteConfig } from './metadata'
-import { getCompanies } from '@/lib/company-storage'
+import { companies } from '@/lib/company-data'
 import { blogPosts } from '@/lib/blog-data'
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = siteConfig.url
 
   // Statik sayfalar
@@ -78,19 +78,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }))
 
-  // Firma sayfaları (dinamik)
-  let companyPages: MetadataRoute.Sitemap = []
-  try {
-    const companies = await getCompanies()
-    companyPages = companies.map((company) => ({
-      url: `${baseUrl}/${company.city}/${company.category}/${company.slug}`,
-      lastModified: company.updatedAt ? new Date(company.updatedAt) : new Date(company.createdAt),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    }))
-  } catch (error) {
-    console.error('Error fetching companies for sitemap:', error)
-  }
+  // Firma sayfaları
+  const companyPages: MetadataRoute.Sitemap = companies.map((company) => ({
+    url: `${baseUrl}/${company.citySlug}/${company.categorySlug}/${company.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }))
 
   // Blog sayfaları
   const publishedPosts = blogPosts.filter(post => post.isPublished)
