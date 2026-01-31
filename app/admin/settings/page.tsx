@@ -126,22 +126,21 @@ export default function AdminSettingsPage() {
         adminUser = null
       }
 
-      // If for some reason it's still missing or malformed, fallback to default
-      if (!adminUser || !adminUser.password) {
-        adminUser = {
-          id: "admin-1",
-          username: "admin",
-          password: "admin123",
-          name: "Administrator",
-          role: "admin"
-        }
-        // Save it back to ensure it exists for next time
-        localStorage.setItem("adminUser", JSON.stringify(adminUser))
+      // Get the current password (could be in old or new format)
+      const currentStoredPassword = adminUser?.password || "admin123"
+      
+      // Always use the correct structure
+      const normalizedAdmin = {
+        id: adminUser?.id || "admin-1",
+        username: adminUser?.username || "admin",
+        password: currentStoredPassword,
+        name: adminUser?.name || "Administrator",
+        role: adminUser?.role || "admin"
       }
       
-      if (adminUser.password === passwordSettings.currentPassword) {
-        adminUser.password = passwordSettings.newPassword
-        localStorage.setItem("adminUser", JSON.stringify(adminUser))
+      if (normalizedAdmin.password === passwordSettings.currentPassword) {
+        normalizedAdmin.password = passwordSettings.newPassword
+        localStorage.setItem("adminUser", JSON.stringify(normalizedAdmin))
         setPasswordSettings({ currentPassword: "", newPassword: "", confirmPassword: "" })
         toast({
           title: "Passwort geändert",
@@ -151,7 +150,7 @@ export default function AdminSettingsPage() {
         toast({
           variant: "destructive",
           title: "Fehler",
-          description: `Das aktuelle Passwort ist falsch.`,
+          description: "Das aktuelle Passwort ist falsch.",
         })
       }
       setLoading(false)
