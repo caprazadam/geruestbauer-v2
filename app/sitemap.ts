@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next'
 import { siteConfig } from './metadata'
 import { supabase } from '@/lib/supabase'
+import type { CompanyDB } from '@/lib/supabase'
 import { blogPosts } from '@/lib/blog-data'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -77,21 +78,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   let companyPages: MetadataRoute.Sitemap = []
-  try {
-    const { data: companies, error } = await supabase
-      .from('companies')
-      .select('slug, city_slug, category_slug, created_at')
-    
-    if (!error && companies) {
-      companyPages = companies.map((company) => ({
-        url: `${baseUrl}/${company.city_slug}/${company.category_slug}/${company.slug}`,
-        lastModified: company.created_at ? new Date(company.created_at) : new Date(),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      }))
+  if (supabase) {
+    try {
+      const { data: companies, error } = await supabase
+        .from('companies')
+        .select('slug, city_slug, category_slug, created_at')
+      
+      if (!error && companies) {
+        companyPages = companies.map((company) => ({
+          url: `${baseUrl}/${company.city_slug}/${company.category_slug}/${company.slug}`,
+          lastModified: company.created_at ? new Date(company.created_at) : new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }))
+      }
+    } catch (e) {
+      console.error('[Sitemap] Error fetching companies:', e)
     }
-  } catch (e) {
-    console.error('[Sitemap] Error fetching companies:', e)
   }
 
   const publishedPosts = blogPosts.filter(post => post.isPublished)

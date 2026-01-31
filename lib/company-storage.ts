@@ -55,6 +55,11 @@ function dbToCompany(db: CompanyDB): Company {
 }
 
 export async function saveCompanyToSupabase(company: Company): Promise<boolean> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return false
+  }
+  
   try {
     const dbCompany = companyToDb(company)
     const { error } = await supabase
@@ -73,6 +78,11 @@ export async function saveCompanyToSupabase(company: Company): Promise<boolean> 
 }
 
 export async function saveMultipleCompaniesToSupabase(companies: Company[]): Promise<boolean> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return false
+  }
+  
   try {
     const dbCompanies = companies.map(companyToDb)
     const { error } = await supabase
@@ -91,6 +101,11 @@ export async function saveMultipleCompaniesToSupabase(companies: Company[]): Pro
 }
 
 export async function loadCompaniesFromSupabase(): Promise<Company[]> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return []
+  }
+  
   try {
     const { data, error } = await supabase
       .from('companies')
@@ -114,6 +129,11 @@ export async function getCompanyBySlugFromSupabase(
   categorySlug: string, 
   companySlug: string
 ): Promise<Company | null> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return null
+  }
+  
   try {
     const { data, error } = await supabase
       .from('companies')
@@ -135,6 +155,11 @@ export async function getCompanyBySlugFromSupabase(
 }
 
 export async function deleteCompanyFromSupabase(id: string): Promise<boolean> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return false
+  }
+  
   try {
     const { error } = await supabase
       .from('companies')
@@ -153,6 +178,11 @@ export async function deleteCompanyFromSupabase(id: string): Promise<boolean> {
 }
 
 export async function updateCompanyInSupabase(company: Company): Promise<boolean> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return false
+  }
+  
   try {
     const dbCompany = companyToDb(company)
     const { error } = await supabase
@@ -172,6 +202,11 @@ export async function updateCompanyInSupabase(company: Company): Promise<boolean
 }
 
 export async function getCompaniesCountFromSupabase(): Promise<number> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return 0
+  }
+  
   try {
     const { count, error } = await supabase
       .from('companies')
@@ -189,6 +224,11 @@ export async function getCompaniesCountFromSupabase(): Promise<number> {
 }
 
 export async function searchCompaniesFromSupabase(query: string): Promise<Company[]> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return []
+  }
+  
   try {
     const { data, error } = await supabase
       .from('companies')
@@ -209,6 +249,11 @@ export async function searchCompaniesFromSupabase(query: string): Promise<Compan
 }
 
 export async function getCompaniesByCityFromSupabase(citySlug: string): Promise<Company[]> {
+  if (!supabase) {
+    console.warn('[Supabase] Client not initialized')
+    return []
+  }
+  
   try {
     const { data, error } = await supabase
       .from('companies')

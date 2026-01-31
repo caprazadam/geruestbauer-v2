@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+function getSupabase() {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return null
+  }
+  return createClient(supabaseUrl, supabaseAnonKey)
+}
 
 const mockCompanies = [
   {
@@ -143,6 +153,11 @@ const mockCompanies = [
 ]
 
 export async function POST() {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+  }
+  
   try {
     const { data, error } = await supabase
       .from('companies')
@@ -171,6 +186,11 @@ export async function POST() {
 }
 
 export async function GET() {
+  const supabase = getSupabase()
+  if (!supabase) {
+    return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 })
+  }
+  
   try {
     const { count, error } = await supabase
       .from('companies')
