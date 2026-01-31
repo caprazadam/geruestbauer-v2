@@ -55,6 +55,15 @@ export default function AdminLoginPage() {
       }
     }
 
+    // Debug logging
+    console.log("Login attempt:", {
+      inputUsername: credentials.username,
+      inputPassword: credentials.password,
+      expectedUsername: adminData.username,
+      expectedPassword: adminData.password,
+      storedAdmin: storedAdmin
+    });
+
     // Überprüfe Credentials
     if (
       credentials.username === adminData.username &&
