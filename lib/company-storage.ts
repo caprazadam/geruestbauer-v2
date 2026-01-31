@@ -107,10 +107,12 @@ export async function loadCompaniesFromSupabase(): Promise<Company[]> {
   }
   
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from('companies')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
+    
+    console.log('[Supabase] Loaded companies - rows returned:', data?.length, '| Total count:', count)
     
     if (error) {
       console.error('[Supabase] Error loading companies:', error)

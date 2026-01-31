@@ -44,6 +44,7 @@ export default function AdminCompaniesPage() {
     setIsLoading(true)
     try {
       const data = await loadCompaniesFromSupabase()
+      console.log("[Admin Companies] Loaded companies count:", data.length)
       setCompanies(data)
     } catch (error) {
       console.error("Error loading companies:", error)
