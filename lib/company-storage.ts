@@ -61,18 +61,23 @@ export async function saveCompanyToSupabase(company: Company): Promise<boolean> 
   }
   
   try {
+    console.log('[Supabase] Saving single company:', company.name)
     const dbCompany = companyToDb(company)
-    const { error } = await supabase
+    
+    const { data, error } = await supabase
       .from('companies')
       .upsert(dbCompany, { onConflict: 'id' })
+      .select()
     
     if (error) {
-      console.error('[Supabase] Error saving company:', error)
+      console.error('[Supabase] Error saving company:', error.message, error.details, error.hint)
       return false
     }
+    
+    console.log('[Supabase] Company saved successfully:', data?.[0]?.name)
     return true
   } catch (e) {
-    console.error('[Supabase] Error saving company:', e)
+    console.error('[Supabase] Exception saving company:', e)
     return false
   }
 }
@@ -84,18 +89,24 @@ export async function saveMultipleCompaniesToSupabase(companies: Company[]): Pro
   }
   
   try {
+    console.log('[Supabase] Saving', companies.length, 'companies...')
     const dbCompanies = companies.map(companyToDb)
-    const { error } = await supabase
+    console.log('[Supabase] First company data:', JSON.stringify(dbCompanies[0], null, 2))
+    
+    const { data, error } = await supabase
       .from('companies')
       .upsert(dbCompanies, { onConflict: 'id' })
+      .select()
     
     if (error) {
-      console.error('[Supabase] Error saving companies:', error)
+      console.error('[Supabase] Error saving companies:', error.message, error.details, error.hint)
       return false
     }
+    
+    console.log('[Supabase] Successfully saved', data?.length || 0, 'companies')
     return true
   } catch (e) {
-    console.error('[Supabase] Error saving companies:', e)
+    console.error('[Supabase] Exception saving companies:', e)
     return false
   }
 }
