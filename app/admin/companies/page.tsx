@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Building2, Search, MoreVertical, Plus, Edit, Trash2, Eye, Upload, Loader2 } from "lucide-react"
+import { Building2, Search, MoreVertical, Plus, Edit, Trash2, Eye, Upload, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
+
+const ITEMS_PER_PAGE = 10
 import { toast } from "sonner"
 import { parseCompanyCSV, transformCSVToCompany } from "@/lib/csv-parser"
 import { 
@@ -36,6 +38,7 @@ export default function AdminCompaniesPage() {
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editData, setEditData] = useState<Partial<Company>>({})
+  const [currentPage, setCurrentPage] = useState(1)
 
   const loadCompanies = async () => {
     setIsLoading(true)
@@ -114,6 +117,17 @@ export default function AdminCompaniesPage() {
     c.city?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCompanies.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedCompanies = filteredCompanies.slice(startIndex, endIndex)
+
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm])
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -178,14 +192,14 @@ export default function AdminCompaniesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCompanies.length === 0 ? (
+                  {paginatedCompanies.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8 text-slate-500">
                         Keine Firmen gefunden. Importieren Sie Daten oder fügen Sie eine neue Firma hinzu.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredCompanies.map((company) => (
+                    paginatedCompanies.map((company) => (
                       <TableRow key={company.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
@@ -244,6 +258,58 @@ export default function AdminCompaniesPage() {
                   )}
                 </TableBody>
               </Table>
+            )}
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                <p className="text-sm text-slate-500">
+                  Zeige {startIndex + 1}-{Math.min(endIndex, filteredCompanies.length)} von {filteredCompanies.length} Firmen
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum ? "bg-blue-600 hover:bg-blue-700" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
