@@ -9,17 +9,20 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SearchBar } from "@/components/search-bar"
-import { MapPin, Star, Users, Award, HardHat, Truck } from "lucide-react"
+import { MapPin, Star, Users, Award, HardHat, Truck, ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { getAllCompanies, type Company } from "@/lib/company-data"
 import Link from "next/link"
 
+const ITEMS_PER_PAGE = 8
+
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const { toast } = useToast()
@@ -76,6 +79,17 @@ export default function CompaniesPage() {
     }
     return true
   })
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCompanies.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedCompanies = filteredCompanies.slice(startIndex, endIndex)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedServices, location, service])
 
   const handleCompanyClick = (id: string) => {
     router.push(`/companies/${id}`)
@@ -199,64 +213,105 @@ export default function CompaniesPage() {
               ))}
             </div>
           ) : filteredCompanies.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredCompanies.map((company) => (
-                <Link
-                  href={`/${company.citySlug}/${company.categorySlug}/${company.slug}`}
-                  key={company.id}
-                  className="group"
-                >
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
-                    <div className="relative h-48">
-                      <Image
-                        src={company.imageUrl || "/professional-scaffolding-berlin.jpg"}
-                        alt={company.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <CardContent className="p-4 flex-grow">
-                      <h3 className="font-bold text-lg mb-1 group-hover:text-blue-600 transition-colors">
-                        {company.name}
-                      </h3>
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <MapPin size={16} className="mr-1" />
-                        <span>{company.location}</span>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {paginatedCompanies.map((company) => (
+                  <Link
+                    href={`/${company.citySlug}/${company.categorySlug}/${company.slug}`}
+                    key={company.id}
+                    className="group"
+                  >
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full flex flex-col">
+                      <div className="relative h-48">
+                        <Image
+                          src={company.imageUrl || "/professional-scaffolding-berlin.jpg"}
+                          alt={company.name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                      <div className="flex items-center mb-3">
-                        <Star size={16} className="text-yellow-500 mr-1 fill-yellow-500" />
-                        <span className="font-semibold">{company.rating}</span>
-                        <span className="text-sm text-gray-600 ml-1">({company.reviewCount})</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {company.services.slice(0, 3).map((service) => (
-                          <Badge key={service} variant="outline" className="flex items-center gap-1 text-xs">
-                            {getServiceIcon(service)}
-                            {getServiceLabel(service)}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {company.certifications.map((cert) => (
-                          <Badge key={cert} variant="secondary" className="text-xs">
-                            {cert}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between items-center border-t">
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <Users size={16} />
-                        <span>{company.employees} Mitarbeiter</span>
-                      </div>
-                      <Button size="sm" variant="outline">
-                        Details
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+                      <CardContent className="p-4 flex-grow">
+                        <h3 className="font-bold text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                          {company.name}
+                        </h3>
+                        <div className="flex items-center text-gray-600 mb-2">
+                          <MapPin size={16} className="mr-1" />
+                          <span>{company.location}</span>
+                        </div>
+                        <div className="flex items-center mb-3">
+                          <Star size={16} className="text-yellow-500 mr-1 fill-yellow-500" />
+                          <span className="font-semibold">{company.rating}</span>
+                          <span className="text-sm text-gray-600 ml-1">({company.reviewCount})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {company.services.slice(0, 3).map((svc) => (
+                            <Badge key={svc} variant="outline" className="flex items-center gap-1 text-xs">
+                              {getServiceIcon(svc)}
+                              {getServiceLabel(svc)}
+                            </Badge>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {company.certifications.map((cert) => (
+                            <Badge key={cert} variant="secondary" className="text-xs">
+                              {cert}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                      <CardFooter className="p-4 pt-0 flex justify-between items-center border-t">
+                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                          <Users size={16} />
+                          <span>{company.employees} Mitarbeiter</span>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          Details
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft size={16} />
+                  </Button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className={currentPage === page ? "bg-blue-600 hover:bg-blue-700" : ""}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight size={16} />
+                  </Button>
+                </div>
+              )}
+
+              <p className="text-center text-sm text-gray-500 mt-4">
+                {filteredCompanies.length} Firma gefunden - Seite {currentPage} von {totalPages}
+              </p>
+            </>
           ) : (
             <div className="text-center py-12">
               <h3 className="text-xl font-semibold mb-2">Keine Firmen gefunden</h3>
