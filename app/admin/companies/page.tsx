@@ -8,10 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Building2, Search, MoreVertical, Plus, Edit, Trash2, Eye, Upload } from "lucide-react"
+import { Building2, Search, MoreVertical, Plus, Edit, Trash2, Eye, Upload, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { parseCompanyCSV, transformCSVToCompany } from "@/lib/csv-parser"
-import { saveCompaniesToStorage, getAllStoredCompanies } from "@/lib/company-storage"
+import { 
+  loadCompaniesFromSupabase, 
+  saveMultipleCompaniesToSupabase, 
+  deleteCompanyFromSupabase,
+  updateCompanyInSupabase
+} from "@/lib/company-storage"
 import type { Company } from "@/lib/company-data"
 import {
   Dialog,
@@ -25,14 +30,28 @@ import { Label } from "@/components/ui/label"
 export default function AdminCompaniesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isUploading, setIsUploading] = useState(false)
-  const [storedCompanies, setStoredCompanies] = useState<Company[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [companies, setCompanies] = useState<Company[]>([])
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editData, setEditData] = useState<Partial<Company>>({})
 
+  const loadCompanies = async () => {
+    setIsLoading(true)
+    try {
+      const data = await loadCompaniesFromSupabase()
+      setCompanies(data)
+    } catch (error) {
+      console.error("Error loading companies:", error)
+      toast.error("Fehler beim Laden der Firmen")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    setStoredCompanies(getAllStoredCompanies())
+    loadCompanies()
   }, [])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,11 +64,13 @@ export default function AdminCompaniesPage() {
       const csvData = parseCompanyCSV(text)
       const newCompanies = csvData.map(transformCSVToCompany)
       
-      const updated = [...newCompanies, ...storedCompanies]
-      saveCompaniesToStorage(updated)
-      setStoredCompanies(getAllStoredCompanies())
-      
-      toast.success(`${newCompanies.length} Firmen erfolgreich importiert`)
+      const success = await saveMultipleCompaniesToSupabase(newCompanies)
+      if (success) {
+        await loadCompanies()
+        toast.success(`${newCompanies.length} Firmen erfolgreich importiert`)
+      } else {
+        toast.error("Import fehlgeschlagen")
+      }
     } catch (error) {
       console.error("Import fehlgeschlagen:", error)
       toast.error("CSV-Import fehlgeschlagen")
@@ -59,57 +80,36 @@ export default function AdminCompaniesPage() {
     }
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Möchten Sie diese Firma wirklich löschen?")) {
-      const updated = storedCompanies.filter(c => c.id !== id)
-      saveCompaniesToStorage(updated)
-      setStoredCompanies(updated)
-      toast.success("Firma gelöscht")
+      const success = await deleteCompanyFromSupabase(id)
+      if (success) {
+        setCompanies(companies.filter(c => c.id !== id))
+        toast.success("Firma gelöscht")
+      } else {
+        toast.error("Fehler beim Löschen")
+      }
     }
   }
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!selectedCompany) return
-    const updated = storedCompanies.map(c => 
-      c.id === selectedCompany.id ? { ...c, ...editData } : c
-    )
-    saveCompaniesToStorage(updated)
-    setStoredCompanies(updated)
-    setIsEditOpen(false)
-    toast.success("Änderungen gespeichert")
+    
+    const updatedCompany = { ...selectedCompany, ...editData } as Company
+    const success = await updateCompanyInSupabase(updatedCompany)
+    
+    if (success) {
+      setCompanies(companies.map(c => 
+        c.id === selectedCompany.id ? updatedCompany : c
+      ))
+      setIsEditOpen(false)
+      toast.success("Änderungen gespeichert")
+    } else {
+      toast.error("Fehler beim Speichern")
+    }
   }
 
-  const mockCompanies = [
-    {
-      id: "mock-1",
-      name: "Müller Gerüstbau GmbH",
-      city: "Berlin",
-      rating: 4.8,
-      status: "active",
-      address: "Musterstraße 1, 10115 Berlin",
-      phone: "+49 30 1234567",
-      email: "info@mueller-geruestbau.de",
-      services: ["Fassadengerüst", "Rollgerüst"]
-    },
-    {
-      id: "mock-2",
-      name: "Schmidt Baugerüste",
-      city: "München",
-      rating: 4.6,
-      status: "active",
-      address: "Beispielweg 42, 80331 München",
-      phone: "+49 89 9876543",
-      email: "kontakt@schmidt-bau.de",
-      services: ["Dachdeckergerüst", "Spezialgerüst"]
-    }
-  ]
-
-  const allCompanies = [
-    ...storedCompanies.map(c => ({ ...c, status: "active" })),
-    ...mockCompanies
-  ]
-
-  const filteredCompanies = allCompanies.filter(c => 
+  const filteredCompanies = companies.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.city?.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -155,89 +155,100 @@ export default function AdminCompaniesPage() {
                   className="pl-10"
                 />
               </div>
+              <Badge variant="outline" className="text-slate-600">
+                {companies.length} Firmen in Datenbank
+              </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Firma</TableHead>
-                  <TableHead>Standort</TableHead>
-                  <TableHead>Bewertung</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCompanies.map((company) => (
-                  <TableRow key={company.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-blue-600" />
-                        {company.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>{company.city}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">{company.rating}</span>
-                        <span className="text-yellow-500">★</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={company.status === "active" ? "default" : "secondary"}
-                        className={
-                          company.status === "active"
-                            ? "bg-green-100 text-green-700 hover:bg-green-100"
-                            : "bg-yellow-100 text-yellow-700 hover:bg-yellow-100"
-                        }
-                      >
-                        {company.status === "active" ? "Aktiv" : "Ausstehend"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedCompany(company as Company)
-                            setIsViewOpen(true)
-                          }}>
-                            <Eye className="h-4 w-4 mr-2" />
-                            Anzeigen
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            setSelectedCompany(company as Company)
-                            setEditData(company)
-                            setIsEditOpen(true)
-                          }}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Bearbeiten
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => handleDelete(company.id)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Löschen
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-3 text-slate-600">Lade Firmen...</span>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Firma</TableHead>
+                    <TableHead>Standort</TableHead>
+                    <TableHead>Bewertung</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredCompanies.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                        Keine Firmen gefunden. Importieren Sie Daten oder fügen Sie eine neue Firma hinzu.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCompanies.map((company) => (
+                      <TableRow key={company.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-blue-600" />
+                            {company.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>{company.city}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="font-medium">{company.rating || 0}</span>
+                            <span className="text-yellow-500">★</span>
+                            <span className="text-xs text-slate-400">({company.reviewCount || 0})</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                            Aktiv
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedCompany(company)
+                                setIsViewOpen(true)
+                              }}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Anzeigen
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setSelectedCompany(company)
+                                setEditData(company)
+                                setIsEditOpen(true)
+                              }}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Bearbeiten
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-red-600"
+                                onClick={() => handleDelete(company.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Löschen
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -251,15 +262,15 @@ export default function AdminCompaniesPage() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right font-bold">Adresse</Label>
-              <div className="col-span-3">{(selectedCompany as any)?.address || "Nicht angegeben"}</div>
+              <div className="col-span-3">{selectedCompany?.address || "Nicht angegeben"}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right font-bold">Telefon</Label>
-              <div className="col-span-3">{(selectedCompany as any)?.phone || "Nicht angegeben"}</div>
+              <div className="col-span-3">{selectedCompany?.phone || "Nicht angegeben"}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right font-bold">E-Mail</Label>
-              <div className="col-span-3">{(selectedCompany as any)?.email || "Nicht angegeben"}</div>
+              <div className="col-span-3">{selectedCompany?.email || "Nicht angegeben"}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right font-bold">Webseite</Label>
@@ -269,6 +280,12 @@ export default function AdminCompaniesPage() {
                     {selectedCompany.website}
                   </a>
                 ) : "Nicht angegeben"}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right font-bold">Bewertung</Label>
+              <div className="col-span-3">
+                {selectedCompany?.rating || 0} ★ ({selectedCompany?.reviewCount || 0} Bewertungen)
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -283,7 +300,6 @@ export default function AdminCompaniesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -311,16 +327,16 @@ export default function AdminCompaniesPage() {
               <Label htmlFor="phone">Telefon</Label>
               <Input 
                 id="phone" 
-                value={(editData as any).phone || ""} 
-                onChange={(e) => setEditData({...editData, phone: e.target.value} as any)}
+                value={editData.phone || ""} 
+                onChange={(e) => setEditData({...editData, phone: e.target.value})}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">E-Mail</Label>
               <Input 
                 id="email" 
-                value={(editData as any).email || ""} 
-                onChange={(e) => setEditData({...editData, email: e.target.value} as any)}
+                value={editData.email || ""} 
+                onChange={(e) => setEditData({...editData, email: e.target.value})}
               />
             </div>
             <div className="grid gap-2">
@@ -345,28 +361,7 @@ export default function AdminCompaniesPage() {
                     placeholder="Bild-URL eingeben..." 
                     value={editData.imageUrl || ""} 
                     onChange={(e) => setEditData({...editData, imageUrl: e.target.value})}
-                    className="mb-2"
                   />
-                  <div className="relative">
-                    <Input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setEditData({...editData, imageUrl: reader.result as string});
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="cursor-pointer"
-                    />
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      Laden Sie eine Datei hoch oder geben Sie eine URL an.
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

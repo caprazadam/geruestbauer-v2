@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Database, Search, CheckCircle2, AlertCircle, Loader2, MapPin, Star, Globe } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { generateSlug, generateCompanyId } from "@/lib/slug-utils"
-import { addMultipleCompaniesToStorage } from "@/lib/company-storage"
+import { saveMultipleCompaniesToSupabase } from "@/lib/company-storage"
 import type { Company } from "@/lib/company-data"
 
 export default function ScraperPage() {
@@ -190,7 +190,7 @@ export default function ScraperPage() {
     }
   }
 
-  const handleSaveResults = () => {
+  const handleSaveResults = async () => {
     if (results.length === 0) {
       toast({
         title: "Keine Daten",
@@ -235,17 +235,25 @@ export default function ScraperPage() {
         }
       })
 
-      addMultipleCompaniesToStorage(companies)
-      setSavedCount(companies.length)
+      const success = await saveMultipleCompaniesToSupabase(companies)
+      
+      if (success) {
+        setSavedCount(companies.length)
+        toast({
+          title: "Erfolgreich gespeichert",
+          description: `${companies.length} Firmen wurden zur Supabase-Datenbank hinzugefügt`,
+        })
 
-      toast({
-        title: "Erfolgreich gespeichert",
-        description: `${companies.length} Firmen wurden zur Datenbank hinzugefügt`,
-      })
-
-      setTimeout(() => {
-        router.push("/admin/companies")
-      }, 2000)
+        setTimeout(() => {
+          router.push("/admin/companies")
+        }, 2000)
+      } else {
+        toast({
+          title: "Fehler",
+          description: "Firmen konnten nicht in Supabase gespeichert werden",
+          variant: "destructive",
+        })
+      }
     } catch (error: any) {
       console.error("[v0] Save error:", error)
       toast({

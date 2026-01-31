@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Users, Star, TrendingUp, BarChart3, Settings, ShieldCheck, Database, LayoutDashboard, Search, Plus } from "lucide-react"
+import { Building2, Users, Star, TrendingUp, BarChart3, Settings, ShieldCheck, Database, LayoutDashboard, Search, Plus, Loader2 } from "lucide-react"
 import AdminLayout from "@/components/admin-layout"
 import { Button } from "@/components/ui/button"
-import { getAllStoredCompanies } from "@/lib/company-storage"
-import { companies as mockCompanies } from "@/lib/company-data"
+import { loadCompaniesFromSupabase, getCompaniesCountFromSupabase } from "@/lib/company-storage"
+import type { Company } from "@/lib/company-data"
 
 export default function AdminDashboardPage() {
   const router = useRouter()
   const [adminUser, setAdminUser] = useState<any>(null)
   const [dashboardStats, setDashboardStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const user = localStorage.getItem("adminUser")
@@ -22,35 +23,63 @@ export default function AdminDashboardPage() {
     }
     setAdminUser(JSON.parse(user))
 
-    // Real-time stats calculation
-    const stored = getAllStoredCompanies()
-    const allCompanies = [...stored, ...mockCompanies]
-    
-    const totalCompanies = allCompanies.length
-    const totalReviews = allCompanies.reduce((acc, c) => acc + (c.reviewCount || 0), 0)
-    const avgRating = totalCompanies > 0 ? (allCompanies.reduce((acc, c) => acc + (c.rating || 0), 0) / totalCompanies).toFixed(1) : "0.0"
+    const loadStats = async () => {
+      setIsLoading(true)
+      try {
+        const companies = await loadCompaniesFromSupabase()
+        const totalCompanies = companies.length
+        const totalReviews = companies.reduce((acc, c) => acc + (c.reviewCount || 0), 0)
+        const avgRating = totalCompanies > 0 
+          ? (companies.reduce((acc, c) => acc + (c.rating || 0), 0) / totalCompanies).toFixed(1) 
+          : "0.0"
 
-    setDashboardStats({
-      totalCompanies,
-      totalReviews,
-      avgRating,
-      activeUsers: "1.234",
-      recentActivities: allCompanies.slice(0, 4).map(c => ({
-        company: c.name,
-        action: "Firma im System aktiv",
-        time: "Aktualisiert"
-      }))
-    })
+        setDashboardStats({
+          totalCompanies,
+          totalReviews,
+          avgRating,
+          activeUsers: "1.234",
+          recentActivities: companies.slice(0, 4).map(c => ({
+            company: c.name,
+            action: "Firma im System aktiv",
+            time: "Aktualisiert"
+          }))
+        })
+      } catch (error) {
+        console.error("Error loading stats:", error)
+        setDashboardStats({
+          totalCompanies: 0,
+          totalReviews: 0,
+          avgRating: "0.0",
+          activeUsers: "0",
+          recentActivities: []
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadStats()
   }, [router])
 
-  if (!adminUser || !dashboardStats) {
+  if (!adminUser) {
     return null
+  }
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="ml-3 text-slate-600">Lade Dashboard...</span>
+        </div>
+      </AdminLayout>
+    )
   }
 
   const stats = [
     {
       title: "Firmen gesamt",
-      value: dashboardStats.totalCompanies.toString(),
+      value: dashboardStats?.totalCompanies?.toString() || "0",
       change: "+12%",
       icon: Building2,
       color: "text-blue-600",
@@ -58,7 +87,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Aktive Benutzer",
-      value: dashboardStats.activeUsers,
+      value: dashboardStats?.activeUsers || "0",
       change: "+23%",
       icon: Users,
       color: "text-green-600",
@@ -66,8 +95,8 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Bewertungen",
-      value: dashboardStats.totalReviews.toString(),
-      change: `∅ ${dashboardStats.avgRating}`,
+      value: dashboardStats?.totalReviews?.toString() || "0",
+      change: `∅ ${dashboardStats?.avgRating || "0.0"}`,
       icon: Star,
       color: "text-yellow-600",
       bgColor: "bg-yellow-100",
@@ -93,7 +122,7 @@ export default function AdminDashboardPage() {
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200 uppercase tracking-wider">
               <ShieldCheck className="h-3.5 w-3.5" />
-              System Online
+              Supabase Verbunden
             </span>
             <Button onClick={() => router.push("/admin/companies")} className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
               <Plus className="h-4 w-4 mr-2" />
@@ -102,7 +131,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Statistiken */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => {
             const Icon = stat.icon
@@ -127,7 +155,6 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Letzte Aktivitäten */}
           <Card className="lg:col-span-2 border-none shadow-sm bg-white">
             <CardHeader className="border-b border-slate-50 pb-6">
               <div className="flex items-center justify-between">
@@ -145,25 +172,30 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-6">
-                {dashboardStats.recentActivities.map((activity: any, index: number) => (
-                  <div key={index} className="flex items-start gap-4 pb-4 border-b border-slate-50 last:border-0 last:pb-0 group cursor-default">
-                    <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors">
-                      <Building2 className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{activity.company}</p>
-                        <span className="text-xs font-medium text-slate-400 whitespace-nowrap">{activity.time}</span>
+                {dashboardStats?.recentActivities?.length > 0 ? (
+                  dashboardStats.recentActivities.map((activity: any, index: number) => (
+                    <div key={index} className="flex items-start gap-4 pb-4 border-b border-slate-50 last:border-0 last:pb-0 group cursor-default">
+                      <div className="p-3 bg-slate-50 rounded-2xl group-hover:bg-blue-50 transition-colors">
+                        <Building2 className="h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                       </div>
-                      <p className="text-sm text-slate-500 font-medium mt-0.5">{activity.action}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{activity.company}</p>
+                          <span className="text-xs font-medium text-slate-400 whitespace-nowrap">{activity.time}</span>
+                        </div>
+                        <p className="text-sm text-slate-500 font-medium mt-0.5">{activity.action}</p>
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    Keine Aktivitäten. Importieren Sie Firmen um zu beginnen.
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Schnellzugriff */}
           <Card className="border-none shadow-sm bg-white">
             <CardHeader className="border-b border-slate-50 pb-6">
               <CardTitle className="flex items-center gap-2 text-xl font-bold text-slate-800">

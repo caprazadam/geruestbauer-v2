@@ -1,12 +1,11 @@
 import { MetadataRoute } from 'next'
 import { siteConfig } from './metadata'
-import { companies } from '@/lib/company-data'
+import { supabase } from '@/lib/supabase'
 import { blogPosts } from '@/lib/blog-data'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteConfig.url
 
-  // Statik sayfalar
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -64,7 +63,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ]
 
-  // Şehir sayfaları
   const cities = [
     'berlin', 'hamburg', 'muenchen', 'koeln', 'frankfurt',
     'stuttgart', 'duesseldorf', 'dortmund', 'essen', 'leipzig',
@@ -78,15 +76,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }))
 
-  // Firma sayfaları
-  const companyPages: MetadataRoute.Sitemap = companies.map((company) => ({
-    url: `${baseUrl}/${company.citySlug}/${company.categorySlug}/${company.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 0.7,
-  }))
+  let companyPages: MetadataRoute.Sitemap = []
+  try {
+    const { data: companies, error } = await supabase
+      .from('companies')
+      .select('slug, city_slug, category_slug, created_at')
+    
+    if (!error && companies) {
+      companyPages = companies.map((company) => ({
+        url: `${baseUrl}/${company.city_slug}/${company.category_slug}/${company.slug}`,
+        lastModified: company.created_at ? new Date(company.created_at) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }))
+    }
+  } catch (e) {
+    console.error('[Sitemap] Error fetching companies:', e)
+  }
 
-  // Blog sayfaları
   const publishedPosts = blogPosts.filter(post => post.isPublished)
   const blogPages: MetadataRoute.Sitemap = publishedPosts.map((post) => ({
     url: `${baseUrl}/blog/${post.slug}`,
