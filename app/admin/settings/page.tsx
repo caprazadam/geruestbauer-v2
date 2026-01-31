@@ -129,9 +129,11 @@ export default function AdminSettingsPage() {
       // If for some reason it's still missing or malformed, fallback to default
       if (!adminUser || !adminUser.password) {
         adminUser = {
-          email: "admin@admin.com",
+          id: "admin-1",
+          username: "admin",
           password: "admin123",
-          name: "Administrator"
+          name: "Administrator",
+          role: "admin"
         }
         // Save it back to ensure it exists for next time
         localStorage.setItem("adminUser", JSON.stringify(adminUser))
