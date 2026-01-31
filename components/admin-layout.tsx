@@ -35,16 +35,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
 
   useEffect(() => {
-    const user = localStorage.getItem("adminUser")
-    if (!user) {
+    const session = localStorage.getItem("adminSession")
+    if (!session) {
       router.push("/admin/login")
       return
     }
-    setAdminUser(JSON.parse(user))
+    try {
+      const sessionData = JSON.parse(session)
+      if (!sessionData.loggedIn) {
+        router.push("/admin/login")
+        return
+      }
+      setAdminUser({
+        name: sessionData.username || "Administrator",
+        role: "admin"
+      })
+    } catch {
+      router.push("/admin/login")
+    }
   }, [router])
 
   const handleLogout = () => {
-    localStorage.removeItem("adminUser")
+    localStorage.removeItem("adminSession")
     router.push("/admin/login")
   }
 

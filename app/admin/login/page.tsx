@@ -36,7 +36,9 @@ export default function AdminLoginPage() {
 
     // Lese gespeicherte Admin-Daten aus localStorage oder verwende Standard-Credentials
     const storedAdmin = localStorage.getItem("adminUser");
-    let adminData = {
+    
+    // Default credentials
+    const defaultAdmin = {
       username: "admin",
       password: "admin123",
       name: "Administrator",
@@ -44,40 +46,35 @@ export default function AdminLoginPage() {
       id: "admin-1"
     };
 
+    let adminData = { ...defaultAdmin };
+
     if (storedAdmin) {
       try {
         const parsed = JSON.parse(storedAdmin);
+        // Only use stored password if it exists
         if (parsed.password) {
-          adminData = { ...adminData, ...parsed };
+          adminData.password = parsed.password;
+        }
+        if (parsed.username) {
+          adminData.username = parsed.username;
         }
       } catch (e) {
         console.error("Error parsing admin data:", e);
       }
     }
 
-    // Debug logging
-    console.log("Login attempt:", {
-      inputUsername: credentials.username,
-      inputPassword: credentials.password,
-      expectedUsername: adminData.username,
-      expectedPassword: adminData.password,
-      storedAdmin: storedAdmin
-    });
-
     // Überprüfe Credentials
     if (
       credentials.username === adminData.username &&
       credentials.password === adminData.password
     ) {
-      // Speichere Admin-Session mit aktuellem Passwort
+      // Speichere nur Session-Info, NICHT das Passwort überschreiben
       localStorage.setItem(
-        "adminUser",
+        "adminSession",
         JSON.stringify({
-          id: adminData.id,
+          loggedIn: true,
           username: adminData.username,
-          password: adminData.password,
-          role: adminData.role,
-          name: adminData.name,
+          loginTime: new Date().toISOString()
         }),
       );
       router.push("/admin/dashboard");
